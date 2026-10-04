@@ -1,0 +1,116 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-background: #f7f5f2;
+  --color-surface: #ffffff;
+  --color-surface-alt: #efede8;
+  --color-surface-raised: #ffffff;
+  --color-border: #e2ded6;
+  --color-border-strong: #c3bdb1;
+  --color-foreground: #121114;
+  --color-muted: #63615c;
+  --color-subtle: #8e8b84;
+  --color-primary: #a85f06;
+  --color-primary-fg: #ffffff;
+  --color-primary-soft: #fff5e8;
+  --color-highlight: #fbb150;
+  --color-highlight-fg: #14131a;
+  --color-accent: #d52027;
+  --color-accent-fg: #ffffff;
+  --color-accent-soft: #ffedee;
+  --color-success: #15803d;
+  --color-warning: #b45309;
+  --color-info: #1d4ed8;
+  --color-danger: #d52027;
+  --color-outline: #14131a;
+  --font-sans: 'Inter', 'Cairo', ui-sans-serif, system-ui, sans-serif;
+  --font-arabic: 'Cairo', 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+[data-theme='dark'] {
+  --color-background: #0c0b0e;
+  --color-surface: #16151a;
+  --color-surface-alt: #1d1c22;
+  --color-surface-raised: #26242c;
+  --color-border: #302e38;
+  --color-border-strong: #4c4a56;
+  --color-foreground: #f7f6f4;
+  --color-muted: #aba8b0;
+  --color-subtle: #7e7b86;
+  --color-primary: #fbb150;
+  --color-primary-fg: #2a1206;
+  --color-primary-soft: #3a2408;
+  --color-highlight: #fbb150;
+  --color-highlight-fg: #14131a;
+  --color-accent: #f44e54;
+  --color-accent-fg: #2b0709;
+  --color-accent-soft: #3a1416;
+  --color-success: #4ade80;
+  --color-warning: #fbbf24;
+  --color-info: #7dafff;
+  --color-danger: #f44e54;
+  --color-outline: #0a090c;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+html[dir='rtl'] body {
+  font-family: var(--font-arabic);
+  letter-spacing: 0 !important;
+}
+
+/* Web-style focus ring on every interactive element */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Flip directional icons when the document is RTL */
+[dir='rtl'] .flip-rtl {
+  transform: scaleX(-1);
+}
+
+/* Clamp helpers */
+.clamp-1,
+.clamp-2,
+.clamp-3 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.clamp-1 {
+  -webkit-line-clamp: 1;
+}
+.clamp-2 {
+  -webkit-line-clamp: 2;
+}
+.clamp-3 {
+  -webkit-line-clamp: 3;
+}
+
+/* Range + video polish */
+input[type='range'] {
+  accent-color: var(--color-primary);
+}
+video::-webkit-media-text-track-display {
+  font-size: 1rem;
+}
+
+/* Slimmer scrollbars for data-dense areas */
+@supports (scrollbar-width: thin) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border-strong) transparent;
+  }
+}
