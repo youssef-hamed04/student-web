@@ -1,5 +1,6 @@
 'use client';
 
+import { BrandLogo } from '@/components/brand/BrandLogo';
 import { SettingsNav } from '@/components/settings/SettingsNav';
 import { Card } from '@/components/ui/core';
 import { AppShell, PageHeader } from '@/components/ui/feedback';
@@ -26,11 +27,12 @@ export default function AboutPage() {
         <div className="space-y-4">
           <Card>
             <div className="flex flex-col items-center text-center">
-              <div className="grid h-20 w-20 place-items-center rounded-xl bg-highlight text-4xl font-black text-highlight-fg">
-                S
+              {/* The mark on its own plate, exactly as the brand artwork draws it. */}
+              <div className="grid w-full max-w-xs place-items-center rounded-2xl bg-primary px-8 py-10">
+                <BrandLogo height={72} priority />
               </div>
-              <h2 className="mt-4 text-xl font-bold">{t('common.appName')}</h2>
-              <p className="mt-1 text-[13px] text-muted" dir="ltr">
+              <h2 className="sr-only">{t('common.appName')}</h2>
+              <p className="mt-4 text-[13px] text-muted" dir="ltr">
                 {t('settings.version', { version })} · web
               </p>
             </div>

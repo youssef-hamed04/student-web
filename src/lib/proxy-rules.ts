@@ -46,3 +46,30 @@ export function isBlockedPath(pathStr: string): boolean {
   }
   return false;
 }
+
+/**
+ * Reads the proxy forwards without a session.
+ *
+ * Creating an account means choosing a university, faculty, department and
+ * academic year — before the student has a token. The proxy refused every
+ * tokenless request, so those four lists came back empty and the registration
+ * form could not be completed at all. The backend serves them publicly and the
+ * mobile app reads them before sign-in; the web was the only client that could
+ * not.
+ *
+ * Exact shapes only, GET only. A prefix match on `catalog/` would quietly let
+ * any future catalog route through without a session, and that should be a
+ * decision someone makes, not a side effect of where a route happens to live.
+ */
+const PUBLIC_READ_PATHS: RegExp[] = [
+  /^catalog\/universities$/,
+  /^catalog\/universities\/[A-Za-z0-9_-]+\/faculties$/,
+  /^catalog\/faculties\/[A-Za-z0-9_-]+\/departments$/,
+  /^catalog\/academic-years$/,
+];
+
+export function isPublicReadPath(method: string, pathStr: string): boolean {
+  if (method !== 'GET') return false;
+  const normalized = pathStr.replace(/^\/+|\/+$/g, '');
+  return PUBLIC_READ_PATHS.some((rx) => rx.test(normalized));
+}

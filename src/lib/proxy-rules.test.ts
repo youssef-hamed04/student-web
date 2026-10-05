@@ -1,7 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { isBlockedPath, BLOCKED_PREFIXES } from './proxy-rules.ts';
+import { isBlockedPath, isPublicReadPath, BLOCKED_PREFIXES } from './proxy-rules.ts';
 
 describe('proxy-rules — route filtering and staff shielding', () => {
   test('allows public browsing and student endpoints', () => {
@@ -60,6 +60,27 @@ describe('proxy-rules — route filtering and staff shielding', () => {
   test('all BLOCKED_PREFIXES are recognized as blocked', () => {
     for (const prefix of BLOCKED_PREFIXES) {
       assert.equal(isBlockedPath(prefix), true, `prefix ${prefix} must be blocked`);
+    }
+  });
+});
+
+describe('isPublicReadPath', () => {
+  test('lets the registration lists through without a session', () => {
+    // Without this the create-account form had four empty dropdowns.
+    assert.equal(isPublicReadPath('GET', 'catalog/universities'), true);
+    assert.equal(isPublicReadPath('GET', 'catalog/universities/abc123/faculties'), true);
+    assert.equal(isPublicReadPath('GET', 'catalog/faculties/abc123/departments'), true);
+    assert.equal(isPublicReadPath('GET', 'catalog/academic-years'), true);
+  });
+
+  test('is GET only', () => {
+    assert.equal(isPublicReadPath('POST', 'catalog/universities'), false);
+    assert.equal(isPublicReadPath('DELETE', 'catalog/academic-years'), false);
+  });
+
+  test('does not open anything else, including other catalog routes', () => {
+    for (const p of ['courses', 'home/feed', 'catalog', 'catalog/universities/x/faculties/y', 'catalog/universities/../admin', 'profile', 'wallet']) {
+      assert.equal(isPublicReadPath('GET', p), false, p);
     }
   });
 });

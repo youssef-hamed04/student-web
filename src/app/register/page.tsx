@@ -12,6 +12,7 @@ import { InlineError } from '@/components/ui/feedback';
 import { Input, PasswordInput, Select } from '@/components/ui/forms';
 import { CheckIcon, ChevronRightIcon, InfoIcon } from '@/components/ui/icons';
 import { useAcademicYears, useDepartments, useFaculties, useUniversities } from '@/features/api';
+import { localizedName } from '@/lib/format';
 import { registerAcademicSchema, registerAccountSchema } from '@/features/schemas';
 import { ApiError, asApiError } from '@/lib/api-client';
 import { useSession, useTranslation } from '@/lib/session-context';
@@ -154,9 +155,13 @@ export default function RegisterPage() {
   const reviewRows: { label: string; value: string; ltr?: boolean }[] = [
     { label: t('auth.fullName'), value: accountForm.getValues().fullName },
     { label: t('auth.phone'), value: accountForm.getValues().phone, ltr: true },
-    { label: t('auth.university'), value: universities.data?.find((u) => u.id === academicForm.getValues().universityId)?.name ?? '—' },
-    { label: t('auth.faculty'), value: faculties.data?.find((f) => f.id === academicForm.getValues().facultyId)?.name ?? '—' },
-    { label: t('auth.academicYear'), value: years.data?.find((y) => y.id === academicForm.getValues().academicYearId)?.name ?? '—' },
+    // Named the same way the dropdowns name them, and the department included:
+    // this is the last look before the account is created, and the department
+    // decides which courses the student sees afterwards.
+    { label: t('auth.university'), value: localizedName(universities.data?.find((u) => u.id === academicForm.getValues().universityId), language) },
+    { label: t('auth.faculty'), value: localizedName(faculties.data?.find((f) => f.id === academicForm.getValues().facultyId), language) },
+    { label: t('auth.department'), value: localizedName(departments.data?.find((d) => d.id === academicForm.getValues().departmentId), language) },
+    { label: t('auth.academicYear'), value: localizedName(years.data?.find((y) => y.id === academicForm.getValues().academicYearId), language) },
   ];
 
   return (

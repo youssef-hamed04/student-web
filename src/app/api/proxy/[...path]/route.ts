@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { asApiError, httpStatusFor } from '@/lib/errors';
-import { isBlockedPath } from '@/lib/proxy-rules';
+import { isBlockedPath, isPublicReadPath } from '@/lib/proxy-rules';
 import {
   currentSessionGeneration,
   isDefinitiveRefreshRejection,
@@ -94,6 +94,17 @@ async function handleProxy(
 
   const accessToken = await getAccessToken();
   if (!accessToken) {
+    if (isPublicReadPath(method, pathStr)) {
+      // Registration lists, read before the student has an account. No token,
+      // no refresh and no cookies are involved, so this path ends here.
+      try {
+        const result = await backendRequest({ method, path: `/${pathStr}` });
+        return NextResponse.json({ success: true, data: result.data, meta: result.meta });
+      } catch (e) {
+        const apiErr = asApiError(e);
+        return jsonError(apiErr.status, apiErr.code, apiErr.message);
+      }
+    }
     return jsonError(401, 'UNAUTHORIZED', 'Not signed in');
   }
 
