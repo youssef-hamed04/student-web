@@ -13,6 +13,7 @@ import {
   useNotifications,
   useUnreadCount,
 } from '@/features/api';
+import { toWebRoute } from '@/lib/routes';
 import { formatDateTime, formatRelative } from '@/lib/format';
 import { useSession, useTranslation } from '@/lib/session-context';
 import type { AppNotification, NotificationKind } from '@/types/domain';
@@ -76,7 +77,7 @@ export default function NotificationsPage() {
 
   const open = (n: AppNotification) => {
     if (!n.read) markRead.mutate(n.id);
-    if (n.route && n.route.startsWith('/')) router.push(n.route);
+    if (n.route) router.push(toWebRoute(n.route, '/notifications'));
   };
 
   const markOne = React.useCallback(

@@ -8,6 +8,8 @@ import { AppShell, EmptyState, ErrorState, PageHeader } from '@/components/ui/fe
 import { GridIcon, LockIcon, SearchIcon } from '@/components/ui/icons';
 import { DataTable, SectionHeading, type Column } from '@/components/ui/table';
 import { useSearch } from '@/features/api';
+import { formatNumber } from '@/lib/format';
+import { toWebRoute } from '@/lib/routes';
 import { useTranslation } from '@/lib/session-context';
 import type { SearchResultItem } from '@/types/domain';
 
@@ -44,7 +46,17 @@ function entityTone(entity: string): 'primary' | 'info' | 'neutral' {
 }
 
 function SearchWorkspace() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
+  // The API's entity enum, named for the reader. An unknown entity falls back
+  // to the enum itself rather than to a blank badge.
+  const entityLabel = React.useCallback(
+    (entity: string) => {
+      const key = `search.entity.${entity}`;
+      const label = t(key);
+      return label === key ? entity : label;
+    },
+    [t]
+  );
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get('q') ?? '';
@@ -92,7 +104,7 @@ function SearchWorkspace() {
   const open = React.useCallback(
     (route: string) => {
       addRecent(debounced);
-      router.push(route);
+      router.push(toWebRoute(route, '/search'));
     },
     [addRecent, debounced, router]
   );
@@ -121,7 +133,7 @@ function SearchWorkspace() {
       {
         key: 'type',
         header: t('web.col.type'),
-        render: (r) => <Badge label={r.entity} tone={entityTone(r.entity)} />,
+        render: (r) => <Badge label={entityLabel(r.entity)} tone={entityTone(r.entity)} />,
       },
       {
         key: 'parent',
@@ -129,7 +141,7 @@ function SearchWorkspace() {
         render: (r) => <span className="clamp-1 text-[13px] text-muted">{r.subtitle ?? '—'}</span>,
       },
     ],
-    [t]
+    [t, entityLabel]
   );
 
   return (
@@ -157,7 +169,7 @@ function SearchWorkspace() {
           <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
             <Chip label={t('search.all')} selected={!entity} onClick={() => setEntity(undefined)} />
             {ENTITY_FILTERS.map((e) => (
-              <Chip key={e} label={e} selected={entity === e} onClick={() => setEntity(e)} />
+              <Chip key={e} label={entityLabel(e)} selected={entity === e} onClick={() => setEntity(e)} />
             ))}
             <Button type="submit" size="sm" className="ms-auto">
               {t('common.search')}
@@ -208,7 +220,7 @@ function SearchWorkspace() {
               <section>
                 <SectionHeading
                   title={t('courses.title')}
-                  subtitle={t('web.resultsCount', { count: courseItems.length })}
+                  subtitle={t('web.resultsCount', { count: formatNumber(courseItems.length, language) })}
                 />
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                   {courseItems.map((item) => (
@@ -230,7 +242,7 @@ function SearchWorkspace() {
                         <div className="clamp-2 text-sm font-semibold leading-snug">{item.title}</div>
                         {item.subtitle ? <div className="mt-1 truncate text-xs text-muted">{item.subtitle}</div> : null}
                         <div className="mt-3 flex items-center gap-2 border-t border-border pt-3">
-                          <Badge label={item.entity} tone={entityTone(item.entity)} />
+                          <Badge label={entityLabel(item.entity)} tone={entityTone(item.entity)} />
                           {item.locked ? (
                             <span className="inline-flex min-w-0 items-center gap-1 text-[11px] text-subtle">
                               <LockIcon size={12} />
@@ -249,7 +261,7 @@ function SearchWorkspace() {
               <section>
                 <SectionHeading
                   title={t('web.curriculum')}
-                  subtitle={t('web.resultsCount', { count: otherItems.length })}
+                  subtitle={t('web.resultsCount', { count: formatNumber(otherItems.length, language) })}
                 />
                 <DataTable<SearchResultItem>
                   columns={columns}
@@ -261,7 +273,7 @@ function SearchWorkspace() {
                     <button type="button" onClick={() => open(r.route)} className="w-full cursor-pointer text-start">
                       <div className="clamp-1 text-[13px] font-semibold">{r.title}</div>
                       <div className="mt-1.5 flex flex-wrap items-center gap-2">
-                        <Badge label={r.entity} tone={entityTone(r.entity)} />
+                        <Badge label={entityLabel(r.entity)} tone={entityTone(r.entity)} />
                         {r.subtitle ? <span className="truncate text-xs text-muted">{r.subtitle}</span> : null}
                       </div>
                     </button>

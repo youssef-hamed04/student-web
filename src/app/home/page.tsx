@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/icons';
 import { SectionHeading } from '@/components/ui/table';
 import { useHomeFeed, useUnreadCount } from '@/features/api';
+import { toWebRoute } from '@/lib/routes';
 import { formatCompact, formatDate, formatDuration } from '@/lib/format';
 import { useSession, useTranslation } from '@/lib/session-context';
 import type { ContinueWatchingItem } from '@/types/domain';
@@ -237,7 +238,7 @@ export default function HomePage() {
                   <li key={n.id}>
                     <button
                       type="button"
-                      onClick={() => router.push(n.route ?? '/notifications')}
+                      onClick={() => router.push(toWebRoute(n.route, '/notifications'))}
                       className="w-full cursor-pointer px-5 py-3 text-start transition hover:bg-surface-alt"
                     >
                       <span className="clamp-1 block text-[13px] font-semibold">{n.title}</span>
