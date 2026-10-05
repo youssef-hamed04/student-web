@@ -55,7 +55,11 @@ export function CourseCard({ course, layout = 'grid' }: { course: CourseSummary;
           <span className="min-w-0">
             {course.isFree ? (
               <Badge label={t('common.free')} tone="success" />
-            ) : course.price ? (
+            ) : course.price && course.access.state === 'NOT_ENROLLED' ? (
+              // A price tag on a course the student already owns reads as a
+              // charge they still have to pay. The mobile card drops it on
+              // enrolment for the same reason; the access badge beside it is
+              // what matters once they are in.
               <span className="truncate text-sm font-bold text-primary">{formatMoney(course.price, language)}</span>
             ) : null}
           </span>

@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import * as React from 'react';
 
 import { CourseCard } from '@/components/courses/CourseCard';
+import { formatNumber } from '@/lib/format';
 import { Badge, Button, Card, CardTitle } from '@/components/ui/core';
 import { AppShell, EmptyState, ErrorState, PageHeader } from '@/components/ui/feedback';
 import { Select, Sheet, Toggle } from '@/components/ui/forms';
@@ -70,7 +71,7 @@ function FilterControls(props: FilterControlsProps) {
 }
 
 export default function CoursesPage() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const router = useRouter();
   const { status } = useSession();
   const [sort, setSort] = React.useState<Sort>('newest');
@@ -157,7 +158,7 @@ export default function CoursesPage() {
           >
             <FilterIcon size={16} />
             {t('courses.filters')}
-            {activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
+            {activeFilterCount > 0 ? ` (${formatNumber(activeFilterCount, language)})` : ''}
           </Button>
         }
       />

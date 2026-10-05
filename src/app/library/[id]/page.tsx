@@ -8,7 +8,7 @@ import { AppShell, ErrorState, PageHeader } from '@/components/ui/feedback';
 import { Sheet } from '@/components/ui/forms';
 import { DataTable, SectionHeading, type Column } from '@/components/ui/table';
 import { useLibraryMaterial, useLibraryPurchase, useLibraryQuote } from '@/features/api';
-import { formatMoney, localizedName } from '@/lib/format';
+import { formatMoney, formatNumber, localizedName } from '@/lib/format';
 import { useSession, useTranslation } from '@/lib/session-context';
 import { toast } from '@/store/stores';
 import type { LibraryPurchaseKind } from '@/types/domain';
@@ -85,7 +85,7 @@ export default function LibraryMaterialPage() {
       render: (part) => (
         <div className="min-w-0">
           <div className="truncate text-sm font-semibold">{localizedName({ name: part.title, nameAr: part.titleAr }, language)}</div>
-          {part.pageCount ? <div className="text-xs text-muted">{part.pageCount}</div> : null}
+          {part.pageCount ? <div className="text-xs text-muted">{formatNumber(part.pageCount, language)}</div> : null}
         </div>
       ),
     },
@@ -151,13 +151,13 @@ export default function LibraryMaterialPage() {
 
           {material.packages.length > 0 ? (
             <section>
-              <SectionHeading title={t('library.packages')} subtitle={`${material.packages.length}`} />
+              <SectionHeading title={t('library.packages')} subtitle={`${formatNumber(material.packages.length, language)}`} />
               <div className="grid gap-3 sm:grid-cols-2">
                 {material.packages.map((pkg) => (
                   <Card key={pkg.id} className="flex flex-col justify-between">
                     <div>
                       <div className="text-sm font-bold">{localizedName({ name: pkg.title, nameAr: pkg.titleAr }, language)}</div>
-                      <div className="mt-0.5 text-xs text-muted">{pkg.partCount}</div>
+                      <div className="mt-0.5 text-xs text-muted">{formatNumber(pkg.partCount, language)}</div>
                     </div>
                     <div className="mt-4 flex items-center justify-between gap-2">
                       <span className="text-sm font-bold text-primary">
@@ -189,7 +189,7 @@ export default function LibraryMaterialPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="text-sm font-semibold">{localizedName({ name: part.title, nameAr: part.titleAr }, language)}</div>
-                      {part.pageCount ? <div className="text-xs text-muted">{part.pageCount}</div> : null}
+                      {part.pageCount ? <div className="text-xs text-muted">{formatNumber(part.pageCount, language)}</div> : null}
                     </div>
                     {part.owned ? (
                       <Badge label={t('library.owned')} tone="success" />
@@ -221,7 +221,7 @@ export default function LibraryMaterialPage() {
         <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
           <Card>
             <CardTitle>{t('web.overview')}</CardTitle>
-            <KeyValue label={t('library.packages')}>{material.packages.length}</KeyValue>
+            <KeyValue label={t('library.packages')}>{formatNumber(material.packages.length, language)}</KeyValue>
             <KeyValue label={t('library.parts')}>{material.parts.length}</KeyValue>
             <KeyValue label={t('web.myLearning')}>
               {material.parts.filter((p) => p.owned).length} / {material.parts.length}

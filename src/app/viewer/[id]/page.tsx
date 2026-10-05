@@ -5,6 +5,7 @@ import * as React from 'react';
 
 import { FocusShell, ErrorState } from '@/components/ui/feedback';
 import { useAttachmentTicket } from '@/features/api';
+import { ProtectedPdf } from '@/components/documents/ProtectedPdf';
 import { useTranslation } from '@/lib/session-context';
 
 export default function ViewerPage() {
@@ -43,10 +44,11 @@ function ViewerBody({ url, watermark }: { url: string; headers?: Record<string, 
   const isPdf = base.endsWith('.pdf');
   const isImage = /\.(png|jpe?g|webp|gif)$/.test(base);
   if (isPdf) {
+    // Same reasoning as the Library reader: an iframe hands the document to the
+    // browser's PDF viewer, Download button and all.
     return (
-      <div className="relative overflow-hidden rounded-xl border border-border bg-surface" style={{ minHeight: '72vh' }}>
-        <iframe src={url} title="document" className="absolute inset-0 h-full w-full" />
-        <span className="pointer-events-none absolute bottom-4 end-4 select-none rounded bg-black/40 px-2 py-1 text-[11px] text-white">{watermark}</span>
+      <div className="overflow-hidden rounded-xl border border-border bg-surface-alt p-3" style={{ minHeight: '72vh' }}>
+        <ProtectedPdf url={url} watermark={watermark} />
       </div>
     );
   }

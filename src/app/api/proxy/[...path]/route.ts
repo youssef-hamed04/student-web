@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { asApiError } from '@/lib/errors';
+import { asApiError, httpStatusFor } from '@/lib/errors';
 import { isBlockedPath } from '@/lib/proxy-rules';
 import {
   currentSessionGeneration,
@@ -11,8 +11,13 @@ import {
   singleFlightRefresh,
   type RefreshOutcome,
 } from '@/lib/refresh-lock';
-import { clearSessionCookies, setSessionCookies } from '@/lib/session-cookies';
-import { backendRequest, getAccessToken, getRefreshToken } from '@/lib/session';
+import {
+  clearSessionCookies,
+  newDeviceId,
+  setDeviceIdCookie,
+  setSessionCookies,
+} from '@/lib/session-cookies';
+import { backendRequest, getAccessToken, getDeviceId, getRefreshToken } from '@/lib/session';
 
 export async function GET(
   request: NextRequest,
@@ -50,7 +55,12 @@ export async function DELETE(
 }
 
 function jsonError(status: number, code: string, message: string) {
-  return NextResponse.json({ success: false, error: { code, message }, code, message }, { status });
+  // Clamped for the same reason httpStatusFor exists: a transport failure
+  // carries status 0, and Response rejects it with a RangeError that replaces
+  // this structured error with a bodiless 500 — the client then has nothing to
+  // show and sits on a spinner.
+  const safe = status >= 200 && status <= 599 ? status : 502;
+  return NextResponse.json({ success: false, error: { code, message }, code, message }, { status: safe });
 }
 
 async function handleProxy(
@@ -75,6 +85,12 @@ async function handleProxy(
       return jsonError(403, 'CSRF_PROTECTION', 'CSRF protection');
     }
   }
+
+  // Protected content is refused outright without this header, so it goes on
+  // every proxied call rather than on a list of paths that would drift.
+  const existingDeviceId = await getDeviceId();
+  const deviceId = existingDeviceId ?? newDeviceId();
+  const isNewDevice = existingDeviceId === null;
 
   const accessToken = await getAccessToken();
   if (!accessToken) {
@@ -104,9 +120,12 @@ async function handleProxy(
       path: `/${backendPath}`,
       body,
       accessToken,
+      deviceId,
     });
 
-    return NextResponse.json({ success: true, data: result.data, meta: result.meta });
+    const response = NextResponse.json({ success: true, data: result.data, meta: result.meta });
+    if (isNewDevice) setDeviceIdCookie(response, deviceId);
+    return response;
   } catch (e) {
     const apiErr = asApiError(e);
 
@@ -173,6 +192,7 @@ async function handleProxy(
         path: `/${backendPath}`,
         body,
         accessToken: outcome.accessToken,
+        deviceId,
       });
 
       const response = NextResponse.json({
@@ -185,6 +205,7 @@ async function handleProxy(
         accessToken: outcome.accessToken,
         refreshToken: outcome.refreshToken,
       });
+      if (isNewDevice) setDeviceIdCookie(response, deviceId);
 
       return response;
     } catch (retryErr) {
@@ -241,7 +262,7 @@ async function performRefresh(refreshToken: string): Promise<RefreshOutcome> {
 
     return {
       ok: false,
-      status: apiErr.status,
+      status: httpStatusFor(apiErr),
       code: apiErr.code,
       message: apiErr.message,
     };

@@ -74,3 +74,23 @@ export function asApiError(e: unknown): ApiError {
   }
   return new ApiError({ code: 'UNKNOWN', status: 0, message: String(e) });
 }
+
+/**
+ * The HTTP status a route may actually answer with.
+ *
+ * `status: 0` is how this module marks a failure that never produced an HTTP
+ * response at all — the backend was unreachable, or the request timed out.
+ * That is useful to the client, but it is not a status: handing it to
+ * `NextResponse.json(..., { status: 0 })` throws `RangeError`, which took the
+ * route's own error handler down and answered a bodiless 500. The caller then
+ * had no code to read and no message to show, so a slow backend looked like a
+ * spinner that never stopped.
+ *
+ * Transport failures are reported as gateway errors, which is what they are
+ * from the browser's point of view: this server could not reach the one behind
+ * it.
+ */
+export function httpStatusFor(error: ApiError): number {
+  if (error.status >= 200 && error.status <= 599) return error.status;
+  return error.code === 'NETWORK_TIMEOUT' ? 504 : 502;
+}

@@ -3,6 +3,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import * as React from 'react';
 
+import { ProtectedPdf } from '@/components/documents/ProtectedPdf';
 import { ErrorState, FocusShell } from '@/components/ui/feedback';
 import { useOpenDocument } from '@/features/api';
 import { useTranslation } from '@/lib/session-context';
@@ -53,11 +54,8 @@ export default function LibraryReaderPage() {
   const ticket = open.data;
   return (
     <FocusShell title={ticket.title} backHref="/library">
-      <div className="relative overflow-hidden rounded-xl border border-border bg-surface" style={{ minHeight: '72vh' }}>
-        <iframe src={ticket.url} title={ticket.title} className="absolute inset-0 h-full w-full" />
-        <span className="pointer-events-none absolute bottom-4 end-4 select-none rounded bg-black/40 px-2 py-1 text-[11px] text-white">
-          {ticket.watermark.primary}
-        </span>
+      <div className="overflow-hidden rounded-xl border border-border bg-surface-alt p-3" style={{ minHeight: '72vh' }}>
+        <ProtectedPdf url={ticket.url} watermark={ticket.watermark.primary} />
       </div>
       <div className="mt-4 flex items-center justify-between gap-3">
         <button

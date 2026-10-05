@@ -1,3 +1,15 @@
+export function formatNumber(value: number, locale: string): string {
+  return new Intl.NumberFormat(locale === 'ar' ? 'ar-EG' : 'en-US').format(value);
+}
+
+/**
+ * A percentage for display. CSS widths must keep Latin digits and are built
+ * separately — `width: ٨٠%` is not a length.
+ */
+export function formatPercent(value: number, locale: string): string {
+  return `${formatNumber(Math.round(value), locale)}%`;
+}
+
 export function formatMoney(money: { amount: number; currency: string }, locale: string): string {
   try {
     return new Intl.NumberFormat(locale === 'ar' ? 'ar-EG' : 'en-US', {
@@ -14,10 +26,19 @@ export function formatDuration(totalSeconds: number, locale: string): string {
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
 
+  // Interpolating the numbers directly printed Western digits, while every
+  // other figure on the page went through Intl and printed Arabic-Indic ones —
+  // so a single row of stats read "٣ دروس" next to "6 د". Durations are counts
+  // like any other and follow the locale's digits.
+  //
+  // `formatTimecode` deliberately does not: a player's position is a fixed-width
+  // readout that stays in Western digits on both platforms.
+  const n = (value: number) => formatNumber(value, locale);
+
   if (hours > 0) {
-    return locale === 'ar' ? `${hours} س ${minutes} د` : `${hours}h ${minutes}m`;
+    return locale === 'ar' ? `${n(hours)} س ${n(minutes)} د` : `${n(hours)}h ${n(minutes)}m`;
   }
-  return locale === 'ar' ? `${minutes} د` : `${minutes}m`;
+  return locale === 'ar' ? `${n(minutes)} د` : `${n(minutes)}m`;
 }
 
 export function formatCompact(value: number, locale: string): string {

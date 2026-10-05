@@ -24,14 +24,29 @@ export async function backendRequest<T>(params: {
   path: string;
   body?: unknown;
   accessToken?: string;
+  /** Presented to the backend's device binding; required by protected content. */
+  deviceId?: string;
+  /** Describes the browser on the call that binds it — the sign-in. */
+  device?: { name?: string; model?: string; osVersion?: string };
   signal?: AbortSignal;
 }): Promise<BackendResponse<T>> {
-  const { method, path, body, accessToken, signal } = params;
+  const { method, path, body, accessToken, deviceId, device, signal } = params;
 
   const headers: Record<string, string> = { accept: 'application/json' };
   if (body !== undefined) headers['content-type'] = 'application/json';
   if (accessToken) headers['authorization'] = `Bearer ${accessToken}`;
   headers['x-client'] = 'web';
+  if (deviceId) {
+    headers['x-device-id'] = deviceId;
+    // Only the id is required. The rest is what the administrator reads in the
+    // device list when a change request lands on their desk, so a row there
+    // says "Chrome on Windows" rather than an opaque identifier.
+    headers['x-device-platform'] = 'web';
+    headers['x-app-version'] = serverConfig.appVersion;
+    if (device?.model) headers['x-device-model'] = device.model;
+    if (device?.osVersion) headers['x-device-os'] = device.osVersion;
+    if (device?.name) headers['x-device-name'] = encodeURIComponent(device.name);
+  }
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), serverConfig.apiTimeoutMs);
@@ -84,6 +99,11 @@ export async function getAccessToken(): Promise<string | null> {
 export async function getRefreshToken(): Promise<string | null> {
   const store = await cookies();
   return store.get(cookieNames.refreshToken)?.value ?? null;
+}
+
+export async function getDeviceId(): Promise<string | null> {
+  const store = await cookies();
+  return store.get(cookieNames.deviceId)?.value ?? null;
 }
 
 export async function getSessionUser(): Promise<SessionUser | null> {

@@ -8,7 +8,7 @@ import { AppShell, EmptyState, ErrorState, PageHeader } from '@/components/ui/fe
 import { BookIcon, ChevronRightIcon, FileIcon, SearchIcon, WalletIcon } from '@/components/ui/icons';
 import { Toolbar } from '@/components/ui/table';
 import { useLibraryBrowse, useMyLibrary, useWallet } from '@/features/api';
-import { formatMoney, localizedName } from '@/lib/format';
+import { formatMoney, formatNumber, localizedName } from '@/lib/format';
 import { useTranslation } from '@/lib/session-context';
 import type { LibraryMaterialSummary, MyLibraryItem } from '@/types/domain';
 
@@ -68,7 +68,7 @@ export default function LibraryPage() {
           </div>
           <div className="mt-0.5 truncate text-[13px] text-muted">{m.subject?.name ?? t('library.title')}</div>
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <Badge label={`${t('library.parts')} · ${m.partCount}`} tone="neutral" />
+            <Badge label={`${t('library.parts')} · ${formatNumber(m.partCount, language)}`} tone="neutral" />
             {m.priceFrom !== null ? (
               <span className="text-[13px] font-bold text-primary">
                 {formatMoney({ amount: m.priceFrom, currency: 'EGP' }, language)}
@@ -80,7 +80,7 @@ export default function LibraryPage() {
           {!fullyOwned && owned > 0 && m.partCount > 0 ? (
             <div className="mt-3">
               <div className="mb-1 text-[13px] text-muted">
-                {t('library.owned')} · {owned}/{m.partCount}
+                {t('library.owned')} · {owned}/{formatNumber(m.partCount, language)}
               </div>
               <ProgressBar percent={(owned / m.partCount) * 100} tone="success" />
             </div>
@@ -110,7 +110,7 @@ export default function LibraryPage() {
         <div className="mt-0.5 clamp-1 text-[13px] text-muted">{item.materialTitle}</div>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <Badge label={t('library.owned')} tone={item.available ? 'success' : 'neutral'} />
-          {item.pageCount ? <span className="text-[13px] text-subtle">{item.pageCount}</span> : null}
+          {item.pageCount ? <span className="text-[13px] text-subtle">{formatNumber(item.pageCount, language)}</span> : null}
         </div>
       </div>
     </Card>

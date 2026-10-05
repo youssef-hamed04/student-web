@@ -7,7 +7,7 @@ import { Badge, Button, Card, CardTitle } from '@/components/ui/core';
 import { AppShell, ErrorState, PageHeader } from '@/components/ui/feedback';
 import { CheckCircleIcon, CheckIcon, ChevronRightIcon, ClockIcon, FileIcon, LockIcon, PlayIcon, TrendingUpIcon } from '@/components/ui/icons';
 import { useCourse, useCourseParts, useLesson, useMarkLessonComplete } from '@/features/api';
-import { formatDuration, formatTimecode, localizedName } from '@/lib/format';
+import { formatDuration, formatNumber, formatTimecode, localizedName } from '@/lib/format';
 import { useTranslation } from '@/lib/session-context';
 import { cn } from '@/lib/utils';
 import type { Language } from '@/i18n/dictionaries';
@@ -250,7 +250,7 @@ export default function LessonPage() {
                           <div className="flex items-center gap-2 px-2 pb-1 pt-2 text-[13px] font-semibold">
                             {s.locked ? <LockIcon size={14} className="shrink-0 text-subtle" /> : null}
                             <span className="min-w-0 flex-1 truncate">{s.title}</span>
-                            <span className="shrink-0 text-subtle">{s.lessonCount}</span>
+                            <span className="shrink-0 text-subtle">{formatNumber(s.lessonCount, language)}</span>
                           </div>
                           {s.lessons.map(outlineRow)}
                         </div>

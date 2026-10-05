@@ -71,8 +71,6 @@ export default function LoginPage() {
     <div className="min-h-screen bg-background">
       <div className="grid min-h-screen lg:grid-cols-2">
         <aside className="relative hidden overflow-hidden bg-primary p-10 text-primary-fg lg:flex lg:flex-col lg:justify-between xl:p-14">
-          <span aria-hidden className="pointer-events-none absolute -top-28 -end-28 h-80 w-80 rounded-full bg-highlight/30 blur-3xl" />
-          <span aria-hidden className="pointer-events-none absolute -bottom-32 -start-20 h-96 w-96 rounded-full bg-highlight/20 blur-3xl" />
 
           <div className="relative">
             <div className="flex items-center gap-2.5">
@@ -80,12 +78,12 @@ export default function LoginPage() {
               <span className="text-[15px] font-bold tracking-tight">{t('common.appName')}</span>
             </div>
             <p className="mt-14 max-w-sm text-[28px] font-bold leading-tight tracking-tight">{t(TAGLINE_KEY)}</p>
-            <p className="mt-3 max-w-sm text-sm text-primary-fg/80">{t('auth.loginSubtitle')}</p>
+            <p className="mt-3 max-w-sm text-sm text-primary-fg">{t('auth.loginSubtitle')}</p>
           </div>
 
           <ul className="relative mt-12 space-y-3">
             {HIGHLIGHT_KEYS.map((key) => (
-              <li key={key} className="flex items-start gap-2.5 text-[13px] font-medium text-primary-fg/90">
+              <li key={key} className="flex items-start gap-2.5 text-[13px] font-medium text-primary-fg">
                 <span className="mt-px grid h-5 w-5 shrink-0 place-items-center rounded-md bg-highlight-fg text-highlight">
                   <CheckIcon size={13} />
                 </span>

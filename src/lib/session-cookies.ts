@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import type { NextResponse } from 'next/server';
 
 import { cookieNames, serverConfig } from './config';
@@ -19,6 +21,7 @@ export interface SessionTokens {
   refreshToken: string;
 }
 
+const DEVICE_MAX_AGE_S = 60 * 60 * 24 * 365 * 2;
 const ACCESS_MAX_AGE_S = 60 * 60 * 12;
 const REFRESH_MAX_AGE_S = 60 * 60 * 24 * 30;
 
@@ -50,4 +53,28 @@ export function clearSessionCookies(response: NextResponse): void {
       maxAge: 0,
     });
   }
+}
+
+/**
+ * The stable identifier this browser presents to the backend's device binding.
+ *
+ * Deliberately long-lived and independent of the session: signing out and back
+ * in must look like the SAME device, or every sign-in would register a new one
+ * and — on a one-device account — park the student in PENDING_APPROVAL waiting
+ * for an administrator who has no idea why.
+ *
+ * The value carries no meaning. It identifies the browser and nothing else.
+ */
+export function setDeviceIdCookie(response: NextResponse, deviceId: string): void {
+  response.cookies.set(cookieNames.deviceId, deviceId, {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: serverConfig.secureCookies,
+    path: '/',
+    maxAge: DEVICE_MAX_AGE_S,
+  });
+}
+
+export function newDeviceId(): string {
+  return randomUUID().replace(/-/g, '');
 }

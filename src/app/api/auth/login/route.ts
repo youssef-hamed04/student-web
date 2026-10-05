@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { ApiError, asApiError } from '@/lib/errors';
+import { ApiError, asApiError, httpStatusFor } from '@/lib/errors';
 import { resetRefreshState, bumpSessionGeneration } from '@/lib/refresh-lock';
 import { cookieNames, serverConfig } from '@/lib/config';
-import { setSessionCookies } from '@/lib/session-cookies';
+import { setDeviceIdCookie, setSessionCookies } from '@/lib/session-cookies';
 import { backendRequest } from '@/lib/session';
+import { resolveDeviceIdentity } from '@/lib/web-device';
 
 /**
  * The student app admits students.
@@ -26,6 +27,7 @@ const STUDENT_ONLY_MESSAGE =
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    const identity = await resolveDeviceIdentity(request);
     const result = await backendRequest<{
       user: {
         id: string;
@@ -42,6 +44,8 @@ export async function POST(request: NextRequest) {
       method: 'POST',
       path: '/auth/login',
       body,
+      deviceId: identity.deviceId,
+      device: identity.device,
     });
 
     const { user, accessToken, refreshToken } = result.data;
@@ -77,6 +81,11 @@ export async function POST(request: NextRequest) {
 
     setSessionCookies(response, { accessToken, refreshToken });
 
+    // Persisted on the response that bound it, so the next sign-in presents the
+    // same device instead of registering a new one and — on a one-device
+    // account — parking the student in PENDING_APPROVAL.
+    if (identity.isNew) setDeviceIdCookie(response, identity.deviceId);
+
     response.cookies.set(
       cookieNames.profile,
       JSON.stringify({
@@ -108,7 +117,7 @@ export async function POST(request: NextRequest) {
         message: apiErr.message,
         errors: apiErr.errors,
       },
-      { status: apiErr.status }
+      { status: httpStatusFor(apiErr) }
     );
   }
 }

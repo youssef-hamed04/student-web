@@ -275,7 +275,15 @@ function ProtectedPlayer({
             ref={videoRef}
             controls
             playsInline
-            className="aspect-video w-full rounded-lg bg-black"
+            // The browser's own menu offers "Save video as…" and "Picture in
+            // picture" on a paid lesson. Neither is ours to give away: the
+            // first hands over the stream, the second floats it outside the
+            // page where the watermark no longer covers it.
+            controlsList="nodownload noplaybackrate noremoteplayback"
+            disablePictureInPicture
+            disableRemotePlayback
+            onContextMenu={(e) => e.preventDefault()}
+            className="aspect-video w-full select-none rounded-lg bg-black"
             onPlay={handlePlay}
             onPause={handlePause}
             onSeeking={handleSeeking}

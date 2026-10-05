@@ -2,6 +2,8 @@
 
 import * as React from 'react';
 
+import { formatPercent } from '@/lib/format';
+import { useTranslation } from '@/lib/session-context';
 import { cn } from '@/lib/utils';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'link' | 'onPlate';
@@ -162,7 +164,7 @@ export function Chip({
     >
       {label}
       {typeof count === 'number' ? (
-        <span className={cn('text-[11px] font-bold', selected ? 'text-primary-fg/80' : 'text-subtle')}>{count}</span>
+        <span className={cn('text-[11px] font-bold', selected ? 'text-primary-fg' : 'text-subtle')}>{count}</span>
       ) : null}
     </button>
   );
@@ -211,6 +213,7 @@ export function ProgressBar({
   className?: string;
   tone?: 'primary' | 'success';
 }) {
+  const { language } = useTranslation();
   const p = Math.max(0, Math.min(100, Math.round(percent)));
   return (
     <div className={cn('w-full', className)}>
@@ -226,7 +229,9 @@ export function ProgressBar({
           style={{ width: `${p}%` }}
         />
       </div>
-      {showLabel ? <div className="mt-1 text-xs font-medium text-muted">{p}%</div> : null}
+      {showLabel ? (
+        <div className="mt-1 text-xs font-medium text-muted">{formatPercent(p, language)}</div>
+      ) : null}
     </div>
   );
 }

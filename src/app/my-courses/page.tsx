@@ -9,6 +9,7 @@ import { AppShell, EmptyState, ErrorState, PageHeader } from '@/components/ui/fe
 import { GridIcon } from '@/components/ui/icons';
 import { DataTable, Toolbar, type Column } from '@/components/ui/table';
 import { useMyCourses } from '@/features/api';
+import { formatPercent } from '@/lib/format';
 import { useTranslation } from '@/lib/session-context';
 import type { CourseSummary } from '@/types/domain';
 
@@ -34,17 +35,20 @@ function CourseCell({ course }: { course: CourseSummary }) {
 }
 
 function ProgressCell({ course }: { course: CourseSummary }) {
+  const { language } = useTranslation();
   const percent = course.progress?.percent ?? 0;
   return (
     <div className="flex items-center gap-2.5">
       <ProgressBar percent={percent} tone={percent >= 100 ? 'success' : 'primary'} className="w-28" />
-      <span className="w-10 shrink-0 text-end text-[13px] font-semibold tabular-nums">{Math.round(percent)}%</span>
+      <span className="w-10 shrink-0 text-end text-[13px] font-semibold tabular-nums">
+        {formatPercent(percent, language)}
+      </span>
     </div>
   );
 }
 
 export default function MyCoursesPage() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const router = useRouter();
   const [tab, setTab] = React.useState<Tab>('active');
   const query = useMyCourses();
@@ -174,7 +178,7 @@ export default function MyCoursesPage() {
                 <div className="mt-3 flex items-center gap-2.5">
                   <ProgressBar percent={c.progress?.percent ?? 0} className="flex-1" />
                   <span className="text-[13px] font-semibold tabular-nums">
-                    {Math.round(c.progress?.percent ?? 0)}%
+                    {formatPercent(c.progress?.percent ?? 0, language)}
                   </span>
                   <Badge label={meta.label} tone={meta.tone} />
                 </div>

@@ -10,7 +10,7 @@ import { Input, Sheet } from '@/components/ui/forms';
 import { CheckIcon, ClockIcon, FileIcon, LayersIcon, LockIcon, PlayIcon, UserIcon } from '@/components/ui/icons';
 import { useCourse, useCourseParts, useEnroll, useJoinOptions, useRedeemCourseCode, useValidateCode } from '@/features/api';
 import { accessCodeSchema } from '@/features/schemas';
-import { formatCompact, formatDate, formatDuration, formatMoney, localizedName } from '@/lib/format';
+import { formatCompact, formatDate, formatDuration, formatMoney, formatNumber, localizedName } from '@/lib/format';
 import { useTranslation } from '@/lib/session-context';
 import { cn } from '@/lib/utils';
 import { toast } from '@/store/stores';
@@ -226,7 +226,7 @@ export default function CourseDetailPage() {
                       <summary className="flex cursor-pointer items-center gap-2.5 px-4 py-3 text-sm font-bold">
                         {s.locked ? <LockIcon size={16} className="text-subtle" /> : <PlayIcon size={16} className="text-primary" />}
                         <span className="min-w-0 flex-1 truncate">{s.title}</span>
-                        <span className="shrink-0 text-[13px] font-normal text-muted">{s.lessonCount}</span>
+                        <span className="shrink-0 text-[13px] font-normal text-muted">{formatNumber(s.lessonCount, language)}</span>
                       </summary>
                       <div className="border-t border-border">
                         {s.lessons.map((l) => (
@@ -281,7 +281,7 @@ export default function CourseDetailPage() {
           <EnrollmentCard course={course} onJoin={() => setJoinOpen(true)} onContinue={continueLearning} />
 
           <Card>
-            <CardTitle action={<span className="text-[13px] font-semibold text-muted">{course.lessonCount}</span>}>
+            <CardTitle action={<span className="text-[13px] font-semibold text-muted">{formatNumber(course.lessonCount, language)}</span>}>
               {t('web.curriculum')}
             </CardTitle>
             {groups.length === 0 || groups.every((g) => g.sections.length === 0) ? (
@@ -307,7 +307,7 @@ export default function CourseDetailPage() {
                           <div className="flex items-center gap-2 px-2 pb-1 pt-2 text-[13px] font-semibold text-foreground">
                             {s.locked ? <LockIcon size={14} className="shrink-0 text-subtle" /> : null}
                             <span className="min-w-0 flex-1 truncate">{s.title}</span>
-                            <span className="shrink-0 text-subtle">{s.lessonCount}</span>
+                            <span className="shrink-0 text-subtle">{formatNumber(s.lessonCount, language)}</span>
                           </div>
                           {s.lessons.map((l) => (
                             <Link
@@ -369,7 +369,19 @@ function EnrollmentCard({
   return (
     <Card>
       <div className="flex items-start justify-between gap-3">
-        {course.isFree || !course.price ? (
+        {/*
+          A student who already holds the course is told what their access is
+          worth in time, not in money — the mobile panel does the same. Leaving
+          the price here read as an outstanding charge on a course they had
+          already paid for.
+        */}
+        {state === 'ACTIVE' ? (
+          <span className="text-[13px] font-semibold text-muted">
+            {course.access.expiresAt
+              ? t('access.expiresOn', { date: formatDate(course.access.expiresAt, language) })
+              : t('access.lifetimeAccess')}
+          </span>
+        ) : course.isFree || !course.price ? (
           <Badge label={t('common.free')} tone="success" />
         ) : (
           <span className="text-xl font-bold tracking-tight">{formatMoney(course.price, language)}</span>
@@ -377,7 +389,7 @@ function EnrollmentCard({
       </div>
 
       <div className="mt-3">
-        <KeyValue label={t('courses.content')}>{course.lessonCount}</KeyValue>
+        <KeyValue label={t('courses.content')}>{formatNumber(course.lessonCount, language)}</KeyValue>
         <KeyValue label={t('web.col.duration')}>
           <span className="inline-flex items-center gap-1.5">
             <ClockIcon size={14} className="text-subtle" />
