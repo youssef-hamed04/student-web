@@ -51,12 +51,12 @@ export function SettingsNav({ current }: { current: string }) {
               aria-current={active ? 'page' : undefined}
               className={cn(
                 'flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-semibold transition-colors',
-                active ? 'bg-primary-soft text-primary' : 'text-muted hover:bg-surface-alt hover:text-foreground',
+                active ? 'bg-primary-soft text-primary-ink' : 'text-muted hover:bg-surface-alt hover:text-foreground',
               )}
             >
               <Icon size={17} />
               <span className="flex-1 truncate">{t(item.labelKey)}</span>
-              <ChevronRightIcon size={14} className={active ? 'text-primary' : 'text-subtle'} />
+              <ChevronRightIcon size={14} className={active ? 'text-primary-ink' : 'text-subtle'} />
             </Link>
           );
         })}

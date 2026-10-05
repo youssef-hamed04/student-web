@@ -10,8 +10,18 @@
   --color-foreground: #101014;
   --color-muted: #6e6e7a;
   --color-subtle: #9a9aa5;
-  --color-primary: #a85f06;
-  --color-primary-fg: #ffffff;
+  /*
+   * The brand orange, sampled from the logo plate. It is a light colour, so
+   * anything written on it is dark ink — white on it measures 1.83:1.
+   */
+  --color-primary: #fbb150;
+  --color-primary-fg: #2a1206;
+  /*
+   * Text in the brand colour uses the logo orange itself, by decision: one
+   * shade across fills and text. On a white surface it measures 1.83:1, so it
+   * suits large or bold labels better than small body text.
+   */
+  --color-primary-ink: #fbb150;
   --color-primary-soft: #fff5e8;
   --color-primary-border: #fcc173;
   --color-highlight: #fbb150;
@@ -51,6 +61,7 @@
   --color-subtle: #7a7a86;
   --color-primary: #fbb150;
   --color-primary-fg: #2a1206;
+  --color-primary-ink: #fbb150;
   --color-primary-soft: #3a2408;
   --color-primary-border: #6b4410;
   --color-highlight: #fbb150;
@@ -89,7 +100,7 @@ html[dir='rtl'] body {
 
 /* Web-style focus ring on every interactive element */
 :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid var(--color-primary-ink);
   outline-offset: 2px;
 }
 

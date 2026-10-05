@@ -90,7 +90,7 @@ export default function TicketPage() {
                         )}
                       >
                         <div className="mb-1 flex items-center gap-2">
-                          <span className={cn('text-[13px] font-bold', mine ? 'text-primary' : 'text-foreground')}>
+                          <span className={cn('text-[13px] font-bold', mine ? 'text-primary-ink' : 'text-foreground')}>
                             {authorName}
                           </span>
                           <span className="text-[13px] text-subtle">{formatDateTime(m.createdAt, language)}</span>

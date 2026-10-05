@@ -177,7 +177,7 @@ function SearchWorkspace() {
                     <button
                       type="button"
                       onClick={clearRecents}
-                      className="cursor-pointer rounded-md text-[13px] font-semibold text-primary transition hover:underline"
+                      className="cursor-pointer rounded-md text-[13px] font-semibold text-primary-ink transition hover:underline"
                     >
                       {t('search.clearRecent')}
                     </button>

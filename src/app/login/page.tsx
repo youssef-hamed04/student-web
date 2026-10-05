@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import * as React from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
+import { BrandLogo } from '@/components/brand/BrandLogo';
 import { Button, Card } from '@/components/ui/core';
 import { InlineError } from '@/components/ui/feedback';
 import { Input, PasswordInput } from '@/components/ui/forms';
@@ -74,8 +75,7 @@ export default function LoginPage() {
 
           <div className="relative">
             <div className="flex items-center gap-2.5">
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-highlight-fg text-base font-black text-highlight">S</span>
-              <span className="text-[15px] font-bold tracking-tight">{t('common.appName')}</span>
+              <BrandLogo height={30} />
             </div>
             <p className="mt-14 max-w-sm text-[28px] font-bold leading-tight tracking-tight">{t(TAGLINE_KEY)}</p>
             <p className="mt-3 max-w-sm text-sm text-primary-fg">{t('auth.loginSubtitle')}</p>
@@ -108,8 +108,7 @@ export default function LoginPage() {
             <div className="mx-auto w-full max-w-sm">
               <Card>
                 <div className="flex items-center gap-2.5">
-                  <span className="grid h-9 w-9 place-items-center rounded-lg bg-primary text-sm font-black text-primary-fg">S</span>
-                  <span className="text-[15px] font-bold tracking-tight">{t('common.appName')}</span>
+                  <BrandLogo height={30} />
                 </div>
 
                 <h1 className="mt-6 text-2xl font-bold tracking-tight">{t('auth.welcomeBack')}</h1>
@@ -149,7 +148,7 @@ export default function LoginPage() {
                     )}
                   />
                   <div className="flex justify-end">
-                    <Link href="/password-help" className="text-[13px] font-semibold text-primary underline-offset-4 hover:underline">
+                    <Link href="/password-help" className="text-[13px] font-semibold text-primary-ink underline-offset-4 hover:underline">
                       {t('auth.forgotPassword')}
                     </Link>
                   </div>
@@ -161,7 +160,7 @@ export default function LoginPage() {
 
               <p className="mt-6 text-center text-sm text-muted">
                 {t('auth.noAccount')}{' '}
-                <Link href="/register" className="font-semibold text-primary underline-offset-4 hover:underline">
+                <Link href="/register" className="font-semibold text-primary-ink underline-offset-4 hover:underline">
                   {t('auth.createAccount')}
                 </Link>
               </p>

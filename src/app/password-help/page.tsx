@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 
+import { BrandLogo } from '@/components/brand/BrandLogo';
 import { Card } from '@/components/ui/core';
 import { ArrowRightIcon, InfoIcon, LifeBuoyIcon } from '@/components/ui/icons';
 import { useTranslation } from '@/lib/session-context';
@@ -15,15 +16,14 @@ export default function PasswordHelpPage() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
       <Card className="mx-auto w-full max-w-lg">
         <div className="flex items-center gap-2.5">
-          <span className="grid h-9 w-9 place-items-center rounded-lg bg-primary text-sm font-black text-primary-fg">S</span>
-          <span className="text-[15px] font-bold tracking-tight">{t('common.appName')}</span>
+          <BrandLogo height={30} />
         </div>
 
         <h1 className="mt-6 text-2xl font-bold tracking-tight">{t('auth.passwordHelpTitle')}</h1>
         <p className="mt-2 text-sm leading-relaxed text-muted">{t('auth.passwordHelpBody')}</p>
 
         <div className="mt-5 flex items-start gap-2.5 rounded-lg border border-border bg-surface-alt/60 p-3.5">
-          <InfoIcon size={18} className="mt-0.5 shrink-0 text-primary" />
+          <InfoIcon size={18} className="mt-0.5 shrink-0 text-primary-ink" />
           <div className="text-[13px] text-muted">
             <p className="font-bold text-foreground">{t('auth.contactAdmin')}</p>
             <p className="mt-0.5">{t('auth.passwordHelpNote')}</p>

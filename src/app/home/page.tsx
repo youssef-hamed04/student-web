@@ -41,7 +41,7 @@ function SeeAllLink({ href }: { href: string }) {
   return (
     <Link
       href={href}
-      className="inline-flex shrink-0 items-center gap-1 rounded-md text-[13px] font-semibold text-primary transition hover:underline"
+      className="inline-flex shrink-0 items-center gap-1 rounded-md text-[13px] font-semibold text-primary-ink transition hover:underline"
     >
       {t('common.seeAll')}
       <ArrowRightIcon size={14} />

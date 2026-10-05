@@ -37,7 +37,7 @@ export default function SecurityPage() {
           <Card>
             {items.map((item) => (
               <div key={item.title} className="flex items-start gap-3 border-b border-border py-3 last:border-0">
-                <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary-soft text-primary">
+                <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary-soft text-primary-ink">
                   <ShieldIcon size={17} />
                 </span>
                 <div className="min-w-0">
@@ -50,7 +50,7 @@ export default function SecurityPage() {
 
           <Card className="border-primary/30 bg-primary-soft">
             <div className="flex items-start gap-3">
-              <InfoIcon size={18} className="mt-0.5 shrink-0 text-primary" />
+              <InfoIcon size={18} className="mt-0.5 shrink-0 text-primary-ink" />
               <p className="text-[13px] leading-relaxed text-muted">
                 Web sessions run in the browser sandbox: there is no screenshot blocking, secure surface, or device
                 integrity attestation on the web. Protected playback (signed expiring URLs, per-session watermark,

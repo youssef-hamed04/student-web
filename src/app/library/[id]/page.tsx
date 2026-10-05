@@ -160,7 +160,7 @@ export default function LibraryMaterialPage() {
                       <div className="mt-0.5 text-xs text-muted">{formatNumber(pkg.partCount, language)}</div>
                     </div>
                     <div className="mt-4 flex items-center justify-between gap-2">
-                      <span className="text-sm font-bold text-primary">
+                      <span className="text-sm font-bold text-primary-ink">
                         {formatMoney({ amount: pkg.price, currency: pkg.currency }, language)}
                       </span>
                       {pkg.fullyOwned ? (
@@ -196,7 +196,7 @@ export default function LibraryMaterialPage() {
                     ) : part.isPreview ? (
                       <Badge label={t('library.preview')} tone="info" />
                     ) : (
-                      <span className="text-sm font-bold text-primary">
+                      <span className="text-sm font-bold text-primary-ink">
                         {formatMoney({ amount: part.price, currency: part.currency }, language)}
                       </span>
                     )}

@@ -14,7 +14,7 @@ const variants: Record<Variant, string> = {
   secondary: 'border border-border-strong bg-surface text-foreground hover:bg-surface-alt',
   ghost: 'text-muted hover:bg-surface-alt hover:text-foreground',
   danger: 'bg-danger text-white hover:brightness-110',
-  link: 'text-primary underline-offset-4 hover:underline px-0',
+  link: 'text-primary-ink underline-offset-4 hover:underline px-0',
   onPlate: 'bg-highlight-fg text-highlight hover:brightness-110',
 };
 
@@ -110,7 +110,7 @@ export function CardTitle({ children, action }: { children: React.ReactNode; act
 }
 
 const badgeTones: Record<string, string> = {
-  primary: 'bg-primary-soft text-primary',
+  primary: 'bg-primary-soft text-primary-ink',
   success: 'bg-success/10 text-success',
   warning: 'bg-warning/10 text-warning',
   danger: 'bg-danger/10 text-danger',
@@ -297,7 +297,7 @@ export function Stat({
 }) {
   const tones: Record<string, string> = {
     neutral: 'bg-surface-alt text-muted',
-    primary: 'bg-primary-soft text-primary',
+    primary: 'bg-primary-soft text-primary-ink',
     success: 'bg-success/10 text-success',
     warning: 'bg-warning/10 text-warning',
   };

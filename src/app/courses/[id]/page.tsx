@@ -175,7 +175,7 @@ export default function CourseDetailPage() {
                     <ul className="mt-3 flex flex-col gap-2">
                       {course.outcomes.map((o) => (
                         <li key={o} className="flex items-start gap-2.5 text-sm text-muted">
-                          <span className="mt-0.5 grid size-4 shrink-0 place-items-center rounded-full bg-primary-soft text-primary">
+                          <span className="mt-0.5 grid size-4 shrink-0 place-items-center rounded-full bg-primary-soft text-primary-ink">
                             <CheckIcon size={12} />
                           </span>
                           <span>{o}</span>
@@ -224,7 +224,7 @@ export default function CourseDetailPage() {
                   {course.sections.map((s) => (
                     <details key={s.id} className="overflow-hidden rounded-xl border border-border bg-surface" open={!s.locked}>
                       <summary className="flex cursor-pointer items-center gap-2.5 px-4 py-3 text-sm font-bold">
-                        {s.locked ? <LockIcon size={16} className="text-subtle" /> : <PlayIcon size={16} className="text-primary" />}
+                        {s.locked ? <LockIcon size={16} className="text-subtle" /> : <PlayIcon size={16} className="text-primary-ink" />}
                         <span className="min-w-0 flex-1 truncate">{s.title}</span>
                         <span className="shrink-0 text-[13px] font-normal text-muted">{formatNumber(s.lessonCount, language)}</span>
                       </summary>
@@ -241,7 +241,7 @@ export default function CourseDetailPage() {
                               ) : l.locked && !l.isPreview ? (
                                 <LockIcon size={14} className="text-subtle" />
                               ) : (
-                                <PlayIcon size={13} className="text-primary" />
+                                <PlayIcon size={13} className="text-primary-ink" />
                               )}
                             </span>
                             <span className="min-w-0 flex-1 truncate">{l.title}</span>
@@ -322,7 +322,7 @@ export default function CourseDetailPage() {
                               }}
                               className={cn(
                                 'flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-[13px] transition-colors hover:bg-surface-alt',
-                                l.id === currentLessonId && 'bg-primary-soft font-semibold text-primary'
+                                l.id === currentLessonId && 'bg-primary-soft font-semibold text-primary-ink'
                               )}
                             >
                               <span className="w-4 shrink-0 text-center">

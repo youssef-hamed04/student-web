@@ -97,7 +97,7 @@ export default function LessonPage() {
     );
     const className = cn(
       'flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-[13px] transition-colors',
-      l.id === lesson.id ? 'bg-primary-soft font-semibold text-primary' : 'text-muted hover:bg-surface-alt'
+      l.id === lesson.id ? 'bg-primary-soft font-semibold text-primary-ink' : 'text-muted hover:bg-surface-alt'
     );
     return locked ? (
       <span key={l.id} className={cn(className, 'cursor-not-allowed')}>
@@ -171,7 +171,7 @@ export default function LessonPage() {
 
             <Card>
               <div className="flex flex-wrap items-center gap-3">
-                <span className={cn('grid size-9 shrink-0 place-items-center rounded-lg', progress?.completed ? 'bg-success/10 text-success' : 'bg-primary-soft text-primary')}>
+                <span className={cn('grid size-9 shrink-0 place-items-center rounded-lg', progress?.completed ? 'bg-success/10 text-success' : 'bg-primary-soft text-primary-ink')}>
                   {progress?.completed ? <CheckCircleIcon size={20} /> : <TrendingUpIcon size={20} />}
                 </span>
                 <div className="min-w-0 flex-1">

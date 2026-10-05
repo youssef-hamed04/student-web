@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import * as React from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
+import { BrandLogo } from '@/components/brand/BrandLogo';
 import { Button, Card } from '@/components/ui/core';
 import { InlineError } from '@/components/ui/feedback';
 import { Input, PasswordInput, Select } from '@/components/ui/forms';
@@ -37,7 +38,7 @@ function StepIndicator({ step }: { step: Step }) {
                 className={cn(
                   'grid h-10 w-10 shrink-0 place-items-center rounded-full border text-[13px] font-bold transition-colors',
                   current && 'border-primary bg-primary text-primary-fg',
-                  done && 'border-primary-soft bg-primary-soft text-primary',
+                  done && 'border-primary-soft bg-primary-soft text-primary-ink',
                   !current && !done && 'border-border-strong text-muted'
                 )}
               >
@@ -165,8 +166,7 @@ export default function RegisterPage() {
 
           <div className="relative">
             <div className="flex items-center gap-2.5">
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-highlight-fg text-base font-black text-highlight">S</span>
-              <span className="text-[15px] font-bold tracking-tight">{t('common.appName')}</span>
+              <BrandLogo height={30} />
             </div>
             <p className="mt-14 max-w-sm text-[28px] font-bold leading-tight tracking-tight">{t(TAGLINE_KEY)}</p>
             <p className="mt-3 max-w-sm text-sm text-primary-fg">{t('auth.loginSubtitle')}</p>
@@ -188,8 +188,7 @@ export default function RegisterPage() {
           <div className="mx-auto w-full max-w-2xl">
             <div className="mb-6">
               <div className="flex items-center gap-2.5">
-                <span className="grid h-9 w-9 place-items-center rounded-lg bg-primary text-sm font-black text-primary-fg">S</span>
-                <span className="text-[15px] font-bold tracking-tight">{t('common.appName')}</span>
+                <BrandLogo height={30} />
               </div>
               <h1 className="mt-5 text-2xl font-bold tracking-tight">{t('auth.createAccount')}</h1>
               <p className="mt-1 text-sm text-muted">{t('auth.stepOf', { current: step + 1, total: 3 })}</p>
@@ -273,9 +272,9 @@ export default function RegisterPage() {
                       ))}
                     </div>
                     <div className="flex items-start gap-2.5 rounded-lg border border-primary/30 bg-primary-soft p-4 text-sm">
-                      <InfoIcon size={18} className="mt-0.5 shrink-0 text-primary" />
+                      <InfoIcon size={18} className="mt-0.5 shrink-0 text-primary-ink" />
                       <div>
-                        <strong className="text-primary">{t('auth.deviceNoticeTitle')}</strong>
+                        <strong className="text-primary-ink">{t('auth.deviceNoticeTitle')}</strong>
                         <p className="mt-0.5 text-muted">{t('auth.deviceNoticeBody')}</p>
                       </div>
                     </div>
@@ -306,7 +305,7 @@ export default function RegisterPage() {
             {step === 0 ? (
               <p className="mt-6 text-center text-sm text-muted">
                 {t('auth.haveAccount')}{' '}
-                <Link href="/login" className="font-semibold text-primary underline-offset-4 hover:underline">
+                <Link href="/login" className="font-semibold text-primary-ink underline-offset-4 hover:underline">
                   {t('auth.login')}
                 </Link>
               </p>

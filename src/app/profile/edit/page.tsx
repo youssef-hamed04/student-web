@@ -165,11 +165,11 @@ export default function EditProfilePage() {
             <ul className="mt-4 space-y-3 border-t border-border pt-4">
               {[t('profile.accountInfo'), t('profile.academicInfo'), t('auth.gender')].map((label) => (
                 <li key={label} className="flex items-start gap-2.5 text-[13px] font-semibold">
-                  <InfoIcon size={16} className="mt-0.5 text-primary" />
+                  <InfoIcon size={16} className="mt-0.5 text-primary-ink" />
                   <span className="min-w-0">{label}</span>
                 </li>
               ))}
-              <li className="flex items-start gap-2.5 text-[13px] font-semibold text-primary">
+              <li className="flex items-start gap-2.5 text-[13px] font-semibold text-primary-ink">
                 <InfoIcon size={16} className="mt-0.5" />
                 <span className="min-w-0">{t('auth.contactAdmin')}</span>
               </li>

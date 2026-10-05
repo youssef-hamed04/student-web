@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import * as React from 'react';
 
+import { BrandLogo } from '@/components/brand/BrandLogo';
 import { Avatar } from '@/components/ui/core';
 import {
   AlertIcon,
@@ -192,7 +193,7 @@ function ThemeSwitch() {
             className={cn(
               'flex cursor-pointer flex-col items-center gap-1 rounded-lg border px-1 py-2 text-[10px] font-semibold transition',
               preference === o.value
-                ? 'border-primary bg-primary-soft text-primary'
+                ? 'border-primary bg-primary-soft text-primary-ink'
                 : 'border-transparent text-muted hover:bg-surface-alt'
             )}
           >
@@ -216,7 +217,7 @@ function NavLinkRow({ item, onNavigate, badge }: { item: NavItem; onNavigate?: (
       onClick={onNavigate}
       className={cn(
         'flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-semibold transition-colors',
-        active ? 'bg-primary-soft text-primary' : 'text-muted hover:bg-surface-alt hover:text-foreground'
+        active ? 'bg-primary-soft text-primary-ink' : 'text-muted hover:bg-surface-alt hover:text-foreground'
       )}
     >
       <Icon size={17} />
@@ -329,8 +330,7 @@ function MobileDrawer({ open, onClose, unread }: { open: boolean; onClose: () =>
       >
         <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4">
           <span className="flex items-center gap-2">
-            <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-sm font-black text-primary-fg">S</span>
-            <span className="text-sm font-bold">{t('common.appName')}</span>
+            <BrandLogo height={30} />
           </span>
           <button onClick={onClose} aria-label={t('common.close')} className="grid h-9 w-9 cursor-pointer place-items-center rounded-lg text-muted hover:bg-surface-alt">
             <CloseIcon size={20} />
@@ -420,8 +420,7 @@ export function AppShell({ children, unread }: { children: React.ReactNode; unre
           </button>
 
           <Link href="/home" className="flex items-center gap-2 rounded-lg px-1 py-1">
-            <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-sm font-black text-primary-fg">S</span>
-            <span className="hidden text-[15px] font-bold tracking-tight sm:block">{t('common.appName')}</span>
+            <BrandLogo height={30} />
           </Link>
 
           <nav className="ms-3 hidden items-center gap-0.5 lg:flex" aria-label="Primary">
@@ -433,7 +432,7 @@ export function AppShell({ children, unread }: { children: React.ReactNode; unre
                   href={item.href}
                   className={cn(
                     'relative flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-semibold transition-colors',
-                    active ? 'bg-primary-soft text-primary' : 'text-muted hover:bg-surface-alt hover:text-foreground'
+                    active ? 'bg-primary-soft text-primary-ink' : 'text-muted hover:bg-surface-alt hover:text-foreground'
                   )}
                 >
                   {t(item.labelKey)}
@@ -537,7 +536,7 @@ export function FocusShell({
           <span className="min-w-0 flex-1 truncate text-sm font-bold">{title}</span>
           {toolbar}
           <Link href="/home" className="flex shrink-0 items-center gap-2">
-            <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-sm font-black text-primary-fg">S</span>
+            <BrandLogo variant="mark" height={30} />
           </Link>
         </div>
       </header>

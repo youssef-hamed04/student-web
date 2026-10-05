@@ -107,7 +107,7 @@ export default function SettingsPage() {
                 <div className="flex items-start gap-3.5">
                   <span
                     className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg ${
-                      card.danger ? 'bg-danger/10 text-danger' : 'bg-primary-soft text-primary'
+                      card.danger ? 'bg-danger/10 text-danger' : 'bg-primary-soft text-primary-ink'
                     }`}
                   >
                     <Icon size={20} />

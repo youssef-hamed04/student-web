@@ -56,7 +56,7 @@ export default function LibraryPage() {
             // eslint-disable-next-line @next/next/no-img-element
             <img src={m.coverUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
           ) : (
-            <BookIcon size={30} className="text-primary" />
+            <BookIcon size={30} className="text-primary-ink" />
           )}
           {fullyOwned ? (
             <Badge label={t('library.owned')} tone="success" className="absolute top-2 end-2" />
@@ -70,7 +70,7 @@ export default function LibraryPage() {
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <Badge label={`${t('library.parts')} · ${formatNumber(m.partCount, language)}`} tone="neutral" />
             {m.priceFrom !== null ? (
-              <span className="text-[13px] font-bold text-primary">
+              <span className="text-[13px] font-bold text-primary-ink">
                 {formatMoney({ amount: m.priceFrom, currency: 'EGP' }, language)}
               </span>
             ) : (
@@ -98,7 +98,7 @@ export default function LibraryPage() {
       className={item.available ? 'overflow-hidden' : 'opacity-60'}
     >
       <div className="relative flex h-28 items-center justify-center bg-gradient-to-br from-primary-soft to-surface-alt">
-        <FileIcon size={28} className="text-primary" />
+        <FileIcon size={28} className="text-primary-ink" />
         {item.available ? null : (
           <Badge label={t('library.preview')} tone="warning" className="absolute top-2 end-2" />
         )}

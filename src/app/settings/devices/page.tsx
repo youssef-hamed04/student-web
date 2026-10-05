@@ -103,7 +103,7 @@ export default function DevicesPage() {
       <PageHeader title={t('devices.title')} subtitle={t('settings.authorizedDevice')} back />
 
       <Card className="mb-5 flex items-start gap-3">
-        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-primary-soft text-primary">
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-primary-soft text-primary-ink">
           <ShieldIcon size={19} />
         </span>
         <div className="min-w-0">
