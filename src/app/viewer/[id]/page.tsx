@@ -6,6 +6,7 @@ import * as React from 'react';
 import { FocusShell, ErrorState } from '@/components/ui/feedback';
 import { useAttachmentTicket } from '@/features/api';
 import { ProtectedPdf } from '@/components/documents/ProtectedPdf';
+import { Watermark } from '@/components/protection/Watermark';
 import { useTranslation } from '@/lib/session-context';
 
 export default function ViewerPage() {
@@ -32,13 +33,13 @@ export default function ViewerPage() {
       ) : query.isError || !query.data ? (
         <ErrorState error={query.error} onRetry={() => void query.refetch()} />
       ) : (
-        <ViewerBody url={query.data.url} headers={query.data.headers} watermark={`${query.data.watermark.primary}`} />
+        <ViewerBody url={query.data.url} watermark={query.data.watermark.primary} secondary={query.data.watermark.secondary} />
       )}
     </FocusShell>
   );
 }
 
-function ViewerBody({ url, watermark }: { url: string; headers?: Record<string, string>; watermark: string }) {
+function ViewerBody({ url, watermark, secondary }: { url: string; watermark: string; secondary?: string }) {
   const { t } = useTranslation();
   const base = (url.split('?')[0] ?? '').toLowerCase();
   const isPdf = base.endsWith('.pdf');
@@ -54,21 +55,23 @@ function ViewerBody({ url, watermark }: { url: string; headers?: Record<string, 
   }
   if (isImage) {
     return (
-      <div className="relative overflow-hidden rounded-xl border border-border bg-surface-alt">
+      <div data-protected className="relative overflow-hidden rounded-xl border border-border bg-surface-alt">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={url} alt="attachment" className="mx-auto max-h-[75vh] select-none" draggable={false} />
-        <span className="pointer-events-none absolute bottom-4 end-4 select-none rounded bg-black/40 px-2 py-1 text-[11px] text-white">{watermark}</span>
+        <Watermark primary={watermark} secondary={secondary} />
       </div>
     );
   }
+  // Word, Excel and other formats a browser cannot draw. The mobile viewer
+  // shows these inside a locked web view that refuses downloads
+  // (`onFileDownload` is a no-op, no cache, incognito). Handing the browser
+  // the signed URL instead — as this page used to — downloads an
+  // unwatermarked copy of paid material to the student's disk. So the web
+  // says plainly that it cannot open the file here, rather than giving it away.
   return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noreferrer"
-      className="inline-flex h-10 items-center rounded-lg bg-primary px-5 text-sm font-semibold text-primary-fg transition hover:brightness-110"
-    >
-      {t('common.continue')}
-    </a>
+    <div className="mx-auto max-w-md rounded-xl border border-border bg-surface p-6 text-center">
+      <p className="text-[15px] font-bold">{t('viewer.unsupportedTitle')}</p>
+      <p className="mt-2 text-sm text-muted">{t('viewer.unsupportedBody')}</p>
+    </div>
   );
 }

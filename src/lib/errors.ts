@@ -22,15 +22,6 @@ export class ApiError extends Error {
   }
 }
 
-export const SESSION_ENDING = new Set<ApiErrorCode>([
-  'SESSION_EXPIRED',
-  'ACCOUNT_DISABLED',
-  'DEVICE_NOT_AUTHORIZED',
-  'DEVICE_LIMIT_REACHED',
-  'DEVICE_CHANGE_PENDING',
-  'DEVICE_INTEGRITY_FAILED',
-]);
-
 interface BackendErrorBody {
   success?: boolean;
   error?: {

@@ -17,6 +17,7 @@ import { registerAcademicSchema, registerAccountSchema } from '@/features/schema
 import { ApiError, asApiError } from '@/lib/api-client';
 import { useSession, useTranslation } from '@/lib/session-context';
 import { cn } from '@/lib/utils';
+import { WEB_REQUEST_HEADER } from '@/lib/web-request';
 
 type Step = 0 | 1 | 2;
 
@@ -118,7 +119,7 @@ export default function RegisterPage() {
       const academic = registerAcademicSchema.parse(academicForm.getValues());
       const res = await fetch('/api/auth/register', {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: { 'content-type': 'application/json', [WEB_REQUEST_HEADER]: '1' },
         credentials: 'same-origin',
         body: JSON.stringify({
           fullName: account.fullName,

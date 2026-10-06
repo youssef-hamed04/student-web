@@ -56,7 +56,7 @@ export default function NewTicketPage() {
               label={t('support.category')}
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              options={CATEGORIES.map((c) => ({ value: c, label: c }))}
+              options={CATEGORIES.map((c) => ({ value: c, label: t(`support.categories.${c}`) }))}
             />
             <TextArea
               label={t('support.message')}

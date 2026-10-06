@@ -62,8 +62,6 @@ export interface CourseFilters {
 
 export const authApi = {
   me: () => api.get<User>('auth/me'),
-  changePassword: (currentPassword: string, newPassword: string) =>
-    api.post<{ success: boolean }>('auth/password', { currentPassword, newPassword }),
 };
 
 export const catalogApi = {
@@ -320,6 +318,27 @@ export function useMarkNotificationRead() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.post(`notifications/${id}/read`),
+    // Optimistic, as on mobile: the row turns read and the badge drops by one
+    // immediately, and both roll back if the server refuses.
+    onMutate: async (id: string) => {
+      await qc.cancelQueries({ queryKey: qk.notifications.all });
+      const snapshot = qc.getQueriesData({ queryKey: qk.notifications.all });
+      qc.setQueriesData<{ pages: Paginated<AppNotification>[]; pageParams: unknown[] }>(
+        { queryKey: qk.notifications.all },
+        (old) =>
+          old && Array.isArray(old.pages)
+            ? {
+                ...old,
+                pages: old.pages.map((p) => ({ ...p, items: p.items.map((n) => (n.id === id ? { ...n, read: true } : n)) })),
+              }
+            : old
+      );
+      qc.setQueryData<{ count: number }>(qk.notifications.unread(), (old) => (old ? { count: Math.max(0, old.count - 1) } : old));
+      return { snapshot };
+    },
+    onError: (_e, _id, ctx) => {
+      ctx?.snapshot.forEach(([key, data]) => qc.setQueryData(key, data));
+    },
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: qk.notifications.all });
     },
@@ -421,7 +440,8 @@ export function useUpdateProfile() {
   return useMutation({
     mutationFn: (values: { fullName: string }) => api.patch<User>('profile', values),
     onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: qk.auth.me() });
+      // `profile` is what the profile page reads; `me` alone left it stale.
+      await qc.invalidateQueries({ queryKey: qk.auth.all });
     },
   });
 }

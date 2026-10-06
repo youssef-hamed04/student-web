@@ -2,15 +2,27 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { ApiError, asApiError, httpStatusFor } from '@/lib/errors';
 import { bumpSessionGeneration, resetRefreshState } from '@/lib/refresh-lock';
-import { setDeviceIdCookie, setSessionCookies } from '@/lib/session-cookies';
+import { setDeviceIdCookie, setProfileCookie, setSessionCookies } from '@/lib/session-cookies';
 import { backendRequest } from '@/lib/session';
+import { hasWebRequestHeader } from '@/lib/web-request';
 import { resolveDeviceIdentity } from '@/lib/web-device';
-import { serverConfig, cookieNames } from '@/lib/config';
 
 const STUDENT_ONLY_MESSAGE =
   'This site is for student accounts only. Staff accounts sign in to the staff dashboard.';
 
 export async function POST(request: NextRequest) {
+  if (!hasWebRequestHeader(request.headers)) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: { code: 'CSRF_PROTECTION', message: 'CSRF protection' },
+        code: 'CSRF_PROTECTION',
+        message: 'CSRF protection',
+      },
+      { status: 403 }
+    );
+  }
+
   try {
     const body = await request.json();
     const identity = await resolveDeviceIdentity(request);
@@ -57,24 +69,7 @@ export async function POST(request: NextRequest) {
     // account — parking the student in PENDING_APPROVAL.
     if (identity.isNew) setDeviceIdCookie(response, identity.deviceId);
 
-    response.cookies.set(
-      cookieNames.profile,
-      JSON.stringify({
-        id: user.id,
-        fullName: user.fullName,
-        phone: user.phone,
-        role: user.role,
-        status: user.status,
-        avatarUrl: user.avatarUrl ?? null,
-      }),
-      {
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: serverConfig.secureCookies,
-        path: '/',
-        maxAge: 60 * 60 * 24 * 30,
-      }
-    );
+    setProfileCookie(response, user);
 
     return response;
   } catch (e) {

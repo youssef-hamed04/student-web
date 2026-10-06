@@ -5,17 +5,18 @@ import { useParams, useRouter } from 'next/navigation';
 import * as React from 'react';
 
 import { Avatar, Badge, Button, Card, CardTitle, KeyValue, ProgressBar, Segmented } from '@/components/ui/core';
-import { AppShell, ErrorState, PageHeader } from '@/components/ui/feedback';
+import { AppShell, ErrorState, PageHeader, toUserMessage } from '@/components/ui/feedback';
 import { Input, Sheet } from '@/components/ui/forms';
-import { CheckIcon, ClockIcon, FileIcon, LayersIcon, LockIcon, PlayIcon, UserIcon } from '@/components/ui/icons';
-import { useCourse, useCourseParts, useEnroll, useJoinOptions, useRedeemCourseCode, useValidateCode } from '@/features/api';
-import { accessCodeSchema } from '@/features/schemas';
+import { CheckIcon, ClockIcon, FileIcon, LayersIcon, LockIcon, PlayIcon, ShieldIcon, UserIcon } from '@/components/ui/icons';
+import { SupportLinks } from '@/components/support/SupportLinks';
+import { useCourse, useCourseParts, useEnroll, useJoinOptions, useRedeemCourseCode } from '@/features/api';
+import { ACCESS_BADGE, courseAccessFlags, joinLabel, joinSheetActions } from '@/lib/course-access';
 import { formatCompact, formatDate, formatDuration, formatMoney, formatNumber, localizedName } from '@/lib/format';
-import { useTranslation } from '@/lib/session-context';
+import { useSession, useTranslation } from '@/lib/session-context';
 import { cn } from '@/lib/utils';
 import { toast } from '@/store/stores';
 import type { Language } from '@/i18n/dictionaries';
-import type { CourseDetail, CourseJoinOptions, CoursePart, CourseSection, LessonSummary } from '@/types/domain';
+import type { AccessState, CourseDetail, CourseJoinOptions, CoursePart, CourseSection, LessonSummary } from '@/types/domain';
 
 type Tab = 'overview' | 'content' | 'materials';
 
@@ -85,12 +86,14 @@ export default function CourseDetailPage() {
     );
   }
 
-  const hasAccess = course.access.state === 'ACTIVE';
+  const flags = courseAccessFlags(course);
+  const hasAccess = flags.hasAccess;
+  const accessBadge = ACCESS_BADGE[course.access.state];
 
   const openLesson = (lesson: LessonSummary) => {
     if (lesson.locked && !lesson.isPreview) {
       toast.info(t('access.lockedBody'));
-      if (course.access.state === 'NOT_ENROLLED') setJoinOpen(true);
+      setJoinOpen(flags.canJoin);
       return;
     }
     router.push(`/lessons/${lesson.id}`);
@@ -120,10 +123,7 @@ export default function CourseDetailPage() {
               <>
                 {course.university ? <Badge label={localizedName(course.university, language)} tone="info" /> : null}
                 {course.academicYear ? <Badge label={localizedName(course.academicYear, language)} tone="primary" /> : null}
-                {hasAccess ? <Badge label={t('access.joinedTitle')} tone="success" /> : null}
-                {course.access.state === 'PENDING_APPROVAL' || course.access.state === 'PENDING_PAYMENT' ? (
-                  <Badge label={t('access.pendingTitle')} tone="warning" />
-                ) : null}
+                {accessBadge ? <Badge label={t(accessBadge.key)} tone={accessBadge.tone} /> : null}
                 <Badge label={formatDuration(course.totalDurationSeconds, language)} />
                 {course.studentCount ? (
                   <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-muted">
@@ -263,7 +263,14 @@ export default function CourseDetailPage() {
                   course.attachments.map((a) => (
                     <button
                       key={a.id}
-                      onClick={() => router.push(a.locked && !hasAccess ? `/courses/${course.id}` : `/viewer/${a.id}`)}
+                      onClick={() => {
+                        if (a.locked && !hasAccess) {
+                          toast.info(t('access.lockedBody'));
+                          setJoinOpen(flags.canJoin);
+                          return;
+                        }
+                        router.push(`/viewer/${a.id}`);
+                      }}
                       className="flex w-full cursor-pointer items-center gap-3 border-b border-border px-4 py-3 text-start text-sm transition-colors last:border-0 hover:bg-surface-alt"
                     >
                       <FileIcon size={17} className="shrink-0 text-subtle" />
@@ -354,6 +361,35 @@ export default function CourseDetailPage() {
   );
 }
 
+function Notice({
+  tone,
+  title,
+  body,
+  children,
+}: {
+  tone: 'neutral' | 'warning' | 'danger';
+  title: string;
+  body: string;
+  children?: React.ReactNode;
+}) {
+  const border =
+    tone === 'danger' ? 'border-danger/40 bg-danger/10' : tone === 'warning' ? 'border-warning/40 bg-warning/10' : 'border-border bg-surface-alt';
+  return (
+    <div className={cn('rounded-lg border p-3.5 text-[13px]', border)}>
+      <strong>{title}</strong>
+      <p className="mt-1 text-muted">{body}</p>
+      {children ? <div className="mt-3">{children}</div> : null}
+    </div>
+  );
+}
+
+/**
+ * The course's access panel. Same states, same order and same wording as the
+ * mobile `AccessPanel`: archived, expired, revoked, pending approval, pending
+ * payment, active, and finally the join button — whose label says "free" only
+ * for a course that is free, and which is disabled when the server offers no
+ * way in.
+ */
 function EnrollmentCard({
   course,
   onJoin,
@@ -364,28 +400,98 @@ function EnrollmentCard({
   onContinue: () => void;
 }) {
   const { t, language } = useTranslation();
-  const state = course.access.state;
+  const { user } = useSession();
+  const flags = courseAccessFlags(course);
+  const label = joinLabel(course);
+  const contact = (
+    <SupportLinks
+      channels={['whatsapp', 'email']}
+      context={{ reason: 'access', courseTitle: course.title, fullName: user?.fullName, phone: user?.phone }}
+    />
+  );
+
+  let action: React.ReactNode;
+  if (flags.isArchived) {
+    action = (
+      <Notice tone="neutral" title={t('access.archivedTitle')} body={t('access.archivedBody')}>
+        {contact}
+      </Notice>
+    );
+  } else if (flags.isExpired) {
+    action = (
+      <Notice tone="danger" title={t('access.expiredTitle')} body={t('access.expiredBody')}>
+        {course.access.availableMethods.length > 0 ? (
+          <Button fullWidth variant="secondary" onClick={onJoin}>
+            {t('access.joinNow')}
+          </Button>
+        ) : (
+          contact
+        )}
+      </Notice>
+    );
+  } else if (flags.isRevoked) {
+    action = (
+      <Notice tone="danger" title={t('access.revoked')} body={t('access.expiredBody')}>
+        {contact}
+      </Notice>
+    );
+  } else if (course.access.state === 'PENDING_APPROVAL') {
+    action = <Notice tone="warning" title={t('access.pendingTitle')} body={t('access.pendingBody')} />;
+  } else if (course.access.state === 'PENDING_PAYMENT') {
+    action = (
+      <Notice tone="warning" title={t('access.paymentPendingTitle')} body={t('access.paymentPendingBody')}>
+        <Button fullWidth variant="secondary" onClick={onJoin}>
+          {t('access.joinNow')}
+        </Button>
+      </Notice>
+    );
+  } else if (flags.hasAccess) {
+    const started = (course.progress?.percent ?? 0) > 0;
+    action = (
+      <Button fullWidth size="lg" onClick={onContinue}>
+        <PlayIcon size={15} />
+        {started ? t('courses.continueCourse') : t('courses.startCourse')}
+      </Button>
+    );
+  } else {
+    action = (
+      <div className="flex flex-col gap-2">
+        <Button fullWidth size="lg" onClick={onJoin} disabled={!flags.canJoin}>
+          {label.kind === 'free'
+            ? t('access.joinFree')
+            : label.kind === 'buy'
+              ? t('access.buyFor', { price: formatMoney(label.price, language) })
+              : t('access.joinNow')}
+        </Button>
+        {!flags.canJoin ? <p className="text-center text-[12px] text-muted">{t('access.noMethods')}</p> : null}
+        <p className="flex items-center justify-center gap-1.5 text-[12px] text-subtle">
+          <ShieldIcon size={13} />
+          {t('security.protectedContentTitle')}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <Card>
       <div className="flex items-start justify-between gap-3">
         {/*
-          A student who already holds the course is told what their access is
-          worth in time, not in money — the mobile panel does the same. Leaving
-          the price here read as an outstanding charge on a course they had
-          already paid for.
+          A student who holds the course is told what their access is worth in
+          time, not money. Otherwise: "Free" only when the course is free, the
+          price when there is one, and nothing at all for a paid course that
+          has no current price — it is not free, it is just not on sale.
         */}
-        {state === 'ACTIVE' ? (
+        {flags.hasAccess ? (
           <span className="text-[13px] font-semibold text-muted">
             {course.access.expiresAt
               ? t('access.expiresOn', { date: formatDate(course.access.expiresAt, language) })
               : t('access.lifetimeAccess')}
           </span>
-        ) : course.isFree || !course.price ? (
+        ) : course.isFree ? (
           <Badge label={t('common.free')} tone="success" />
-        ) : (
+        ) : course.price ? (
           <span className="text-xl font-bold tracking-tight">{formatMoney(course.price, language)}</span>
-        )}
+        ) : null}
       </div>
 
       <div className="mt-3">
@@ -406,98 +512,190 @@ function EnrollmentCard({
         </div>
       </div>
 
-      {course.progress && state === 'ACTIVE' ? (
+      {course.progress && flags.hasAccess ? (
         <div className="mt-4 border-t border-border pt-4">
           <div className="mb-2 text-[13px] font-semibold text-muted">{t('courses.yourProgress')}</div>
           <ProgressBar percent={course.progress.percent} showLabel />
         </div>
       ) : null}
 
-      <div className="mt-4">
-        {state === 'ACTIVE' ? (
-          <Button fullWidth size="lg" onClick={onContinue}>
-            {t('access.joinedTitle')} · {t('common.continue')}
-          </Button>
-        ) : state === 'PENDING_APPROVAL' ? (
-          <div className="rounded-lg border border-warning/40 bg-warning/10 p-3.5 text-[13px]">
-            <strong>{t('access.pendingTitle')}</strong>
-            <p className="mt-1 text-muted">{t('access.pendingBody')}</p>
-          </div>
-        ) : (
-          <Button fullWidth size="lg" onClick={onJoin}>
-            {t('access.join')}
-          </Button>
-        )}
-      </div>
+      <div className="mt-4">{action}</div>
     </Card>
   );
 }
 
-function JoinSheet({ courseId, open, onClose }: { courseId: string; open: boolean; onClose: () => void }) {
+function JoinOption({
+  title,
+  subtitle,
+  price,
+  owned,
+  selected,
+  onSelect,
+}: {
+  title: string;
+  subtitle?: string;
+  price: string | null;
+  owned: boolean;
+  selected: boolean;
+  onSelect: () => void;
+}) {
   const { t } = useTranslation();
+  return (
+    <div className={cn('flex flex-col gap-1.5 rounded-lg border p-3', selected ? 'border-primary bg-primary-soft' : 'border-border bg-surface')}>
+      <div className="flex items-center justify-between gap-2">
+        <span className="min-w-0 flex-1 text-sm font-semibold">{title}</span>
+        {owned ? <Badge label={t('parts.owned')} tone="success" /> : price ? <span className="text-sm font-bold">{price}</span> : null}
+      </div>
+      {subtitle ? <p className="text-[13px] text-muted">{subtitle}</p> : null}
+      {owned ? null : (
+        <Button size="sm" variant={selected ? 'primary' : 'secondary'} onClick={onSelect}>
+          {selected ? t('access.selected') : t('access.chooseThis')}
+        </Button>
+      )}
+    </div>
+  );
+}
+
+/**
+ * The join sheet. It asks the server (`/join-options`) what the options and
+ * mechanisms are, exactly as the mobile `JoinSheet` does: the whole course and
+ * each part with their prices, then only the ways in the server permits. Online
+ * payment is never offered — the platform sells courses with cash cards, not
+ * cards online.
+ */
+function JoinSheet({ courseId, open, onClose }: { courseId: string; open: boolean; onClose: () => void }) {
+  return <JoinSheetBody key={open ? 'open' : 'closed'} courseId={courseId} open={open} onClose={onClose} />;
+}
+
+function JoinSheetBody({ courseId, open, onClose }: { courseId: string; open: boolean; onClose: () => void }) {
+  const { t, language } = useTranslation();
   const options = useJoinOptions(courseId, open);
   const enroll = useEnroll(courseId);
   const redeem = useRedeemCourseCode(courseId);
-  const validate = useValidateCode();
   const [code, setCode] = React.useState('');
   const [error, setError] = React.useState<string | null>(null);
+  const [intent, setIntent] = React.useState<string | null>(null);
 
   const data: CourseJoinOptions | undefined = options.data;
 
-  const doEnroll = async (method: 'FREE' | 'PAYMENT' | 'CODE' | 'ADMIN_APPROVAL') => {
+  const afterJoin = (state: AccessState) => {
+    if (state === 'ACTIVE') toast.success(t('access.joinedBody'));
+    else if (state === 'PENDING_APPROVAL') toast.info(t('access.pendingBody'));
+    else if (state === 'PENDING_PAYMENT') toast.info(t('access.paymentPendingBody'));
+    onClose();
+  };
+
+  const doEnroll = async (method: 'FREE' | 'ADMIN_APPROVAL') => {
     setError(null);
     try {
       const res = await enroll.mutateAsync(method);
-      toast.success(t(res.state === 'ACTIVE' ? 'access.joinedTitle' : 'access.pendingTitle'));
-      onClose();
+      afterJoin(res.state);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error');
+      setError(toUserMessage(e, t));
     }
   };
 
   const doRedeem = async () => {
-    const parsed = accessCodeSchema.safeParse({ code });
-    if (!parsed.success) {
-      setError(t('validation.codeFormat'));
+    const trimmed = code.trim().toUpperCase();
+    if (trimmed.length === 0) {
+      setError(t('access.codeRequired'));
       return;
     }
     setError(null);
     try {
-      const res = await redeem.mutateAsync(parsed.data.code);
-      toast.success(t(res.state === 'ACTIVE' ? 'access.joinedTitle' : 'access.pendingTitle'));
-      onClose();
+      const res = await redeem.mutateAsync(trimmed);
+      afterJoin(res.state);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error');
+      setError(toUserMessage(e, t));
     }
   };
+
+  const actions = data ? joinSheetActions(data) : null;
 
   return (
     <Sheet open={open} onClose={onClose} title={t('access.joinTitle')}>
       {options.isLoading ? (
         <p className="py-8 text-center text-sm text-muted">{t('common.loading')}</p>
-      ) : options.isError || !data ? (
-        <ErrorState error={options.error} compact />
+      ) : options.isError || !data || !actions ? (
+        <ErrorState error={options.error} onRetry={() => void options.refetch()} compact />
       ) : (
         <div className="flex flex-col gap-3 pb-2">
+          <p className="text-sm font-semibold">{localizedName({ name: data.title, nameAr: data.titleAr }, language)}</p>
           <p className="text-sm text-muted">{t('access.joinIntro')}</p>
-          {data.enrollmentMethods.includes('FREE') ? (
-            <Button fullWidth onClick={() => void doEnroll('FREE')} loading={enroll.isPending}>{t('access.joinFree')}</Button>
+
+          <JoinOption
+            title={t('access.fullCourse')}
+            subtitle={t('access.fullCourseBody')}
+            price={
+              data.fullCourse.isFree
+                ? t('access.free')
+                : data.fullCourse.price === null
+                  ? null
+                  : formatMoney({ amount: data.fullCourse.price, currency: data.fullCourse.currency }, language)
+            }
+            owned={data.fullCourse.owned}
+            selected={intent === 'FULL'}
+            onSelect={() => setIntent('FULL')}
+          />
+
+          {data.hasParts ? (
+            <div className="flex flex-col gap-2">
+              <p className="text-[13px] font-semibold text-muted">{t('access.orOnePart')}</p>
+              {data.parts.map((part) => (
+                <JoinOption
+                  key={part.id}
+                  title={localizedName({ name: part.title, nameAr: part.titleAr }, language)}
+                  subtitle={t('parts.sectionCount', { count: part.sectionCount })}
+                  price={part.price === null ? null : formatMoney({ amount: part.price, currency: part.currency }, language)}
+                  owned={part.owned}
+                  selected={intent === part.id}
+                  onSelect={() => setIntent(part.id)}
+                />
+              ))}
+            </div>
           ) : null}
-          {data.enrollmentMethods.includes('ADMIN_APPROVAL') ? (
-            <Button fullWidth variant="secondary" onClick={() => void doEnroll('ADMIN_APPROVAL')} loading={enroll.isPending}>{t('access.methodApproval')}</Button>
+
+          {actions.free ? (
+            <Button fullWidth onClick={() => void doEnroll('FREE')} loading={enroll.isPending}>
+              {t('access.joinFree')}
+            </Button>
           ) : null}
-          {data.enrollmentMethods.includes('PAYMENT') ? (
-            <Button fullWidth variant="secondary" onClick={() => void doEnroll('PAYMENT')} loading={enroll.isPending}>{t('access.methodPayment')}</Button>
+          {actions.approval ? (
+            <Button fullWidth variant="secondary" onClick={() => void doEnroll('ADMIN_APPROVAL')} loading={enroll.isPending}>
+              {t('access.requestApproval')}
+            </Button>
           ) : null}
-          <div className="rounded-lg border border-border bg-surface-alt/60 p-3">
-            <Input label={t('access.codeLabel')} placeholder={t('access.codePlaceholder')} value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} dir="ltr" />
-            {validate.data ? <p className="mt-1 text-[13px] text-muted">{validate.data.course?.title}</p> : null}
-            <Button fullWidth className="mt-2" loading={redeem.isPending} onClick={doRedeem}>{t('access.redeem')}</Button>
-          </div>
-          {error ? <p className="text-sm text-danger">{error}</p> : null}
-          {data.enrollmentMethods.length === 0 && !data.methods.accessCode ? (
-            <p className="text-sm text-muted">{t('access.noMethods')}</p>
+
+          {actions.code ? (
+            <div className="rounded-lg border border-border bg-surface-alt/60 p-3">
+              <p className="text-sm font-semibold">{t('access.methodCode')}</p>
+              <p className="mb-2 mt-1 text-[13px] text-muted">
+                {intent === 'FULL' ? t('access.cardHintFullCourse') : intent ? t('access.cardHintPart') : t('access.cardHintGeneric')}
+              </p>
+              <Input
+                label={t('access.codeLabel')}
+                placeholder={t('access.codePlaceholder')}
+                value={code}
+                onChange={(e) => {
+                  setCode(e.target.value.toUpperCase());
+                  if (error) setError(null);
+                }}
+                disabled={redeem.isPending}
+                autoComplete="off"
+                dir="ltr"
+              />
+              <Button fullWidth className="mt-2" loading={redeem.isPending} onClick={() => void doRedeem()}>
+                {t('access.redeem')}
+              </Button>
+            </div>
           ) : null}
+
+          {error ? (
+            <p className="text-sm text-danger" role="alert">
+              {error}
+            </p>
+          ) : null}
+          {actions.none ? <p className="rounded-lg border border-border p-3 text-sm text-muted">{t('access.noMethods')}</p> : null}
         </div>
       )}
     </Sheet>

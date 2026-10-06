@@ -43,6 +43,45 @@ export function setSessionCookies(response: NextResponse, tokens: SessionTokens)
   });
 }
 
+/** The fields of the signed-in user the shell renders without a request. */
+export interface ProfileSnapshot {
+  id: string;
+  fullName: string;
+  phone: string;
+  role: string;
+  status: string;
+  avatarUrl?: string | null;
+}
+
+/**
+ * Writes the display snapshot of the signed-in user.
+ *
+ * Written at sign-in and again whenever `/auth/me` is read through the proxy,
+ * which is what the mobile app's `refreshUser()` amounts to: after a name or
+ * picture change, or an account being disabled, the next read replaces the
+ * snapshot instead of the header showing the old one for thirty days.
+ */
+export function setProfileCookie(response: NextResponse, user: ProfileSnapshot): void {
+  response.cookies.set(
+    cookieNames.profile,
+    JSON.stringify({
+      id: user.id,
+      fullName: user.fullName,
+      phone: user.phone,
+      role: user.role,
+      status: user.status,
+      avatarUrl: user.avatarUrl ?? null,
+    }),
+    {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: serverConfig.secureCookies,
+      path: '/',
+      maxAge: REFRESH_MAX_AGE_S,
+    }
+  );
+}
+
 export function clearSessionCookies(response: NextResponse): void {
   for (const name of [cookieNames.accessToken, cookieNames.refreshToken, cookieNames.profile]) {
     response.cookies.set(name, '', {

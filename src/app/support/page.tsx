@@ -31,11 +31,8 @@ export default function SupportPage() {
   const [filter, setFilter] = React.useState<StatusFilter>('all');
   const items = React.useMemo(() => query.data?.items ?? [], [query.data]);
 
-  const statusLabel = React.useCallback(
-    (status: SupportTicketStatus) =>
-      OPEN_STATUSES.includes(status) ? t('progress.inProgress') : t('progress.completed'),
-    [t]
-  );
+  // The mobile labels: Open / Pending / Resolved / Closed, not a two-way guess.
+  const statusLabel = React.useCallback((status: SupportTicketStatus) => t(`support.status.${status}`), [t]);
 
   const counts = React.useMemo(
     () => ({
@@ -71,7 +68,7 @@ export default function SupportPage() {
           <div className="min-w-0">
             <div className="clamp-1 text-sm font-semibold">{ticket.subject}</div>
             <div className="mt-1 flex flex-wrap items-center gap-2">
-              <Badge label={ticket.category} tone="neutral" />
+              <Badge label={t(`support.categories.${ticket.category}`)} tone="neutral" />
               <span className="text-[13px] text-subtle" dir="ltr">
                 {ticket.reference}
               </span>
@@ -182,7 +179,7 @@ export default function SupportPage() {
                 <div className="min-w-0 flex-1">
                   <div className="clamp-2 text-sm font-bold">{ticket.subject}</div>
                   <div className="mt-1 flex flex-wrap items-center gap-2">
-                    <Badge label={ticket.category} tone="neutral" />
+                    <Badge label={t(`support.categories.${ticket.category}`)} tone="neutral" />
                     <span className="text-[13px] text-subtle" dir="ltr">
                       {ticket.reference}
                     </span>

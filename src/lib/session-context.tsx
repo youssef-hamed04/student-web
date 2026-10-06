@@ -3,6 +3,9 @@
 import * as React from 'react';
 
 import { translate, type Language } from '@/i18n/dictionaries';
+import { ApiError, api } from '@/lib/api-client';
+import { endSessionIfNeeded } from '@/lib/session-end';
+import { WEB_REQUEST_HEADER } from '@/lib/web-request';
 import { useLanguageStore } from '@/store/stores';
 
 interface SessionUser {
@@ -44,26 +47,49 @@ export function SessionProvider({
     initialUser ? 'authenticated' : 'loading'
   );
 
+  /**
+   * Re-reads the signed-in user from the backend (`/auth/me`), as the mobile
+   * app does on launch and after a profile change. Reading it through the
+   * proxy also rewrites the profile cookie, so the next server render agrees.
+   */
   const refresh = React.useCallback(async () => {
     try {
-      const res = await fetch('/api/auth/session', { credentials: 'same-origin' });
-      const body = await res.json();
-      const next = (body?.data ?? null) as SessionUser | null;
-      setUser(next);
-      setStatus(next ? 'authenticated' : 'unauthenticated');
-    } catch {
-      setUser(null);
-      setStatus('unauthenticated');
+      const fresh = await api.get<SessionUser>('auth/me');
+      setUser({
+        id: fresh.id,
+        fullName: fresh.fullName,
+        phone: fresh.phone,
+        role: fresh.role,
+        status: fresh.status,
+        avatarUrl: fresh.avatarUrl ?? null,
+      });
+      setStatus('authenticated');
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 401) {
+        setUser(null);
+        setStatus('unauthenticated');
+        endSessionIfNeeded(e);
+        return;
+      }
+      endSessionIfNeeded(e);
+      // A transport failure says nothing about the session: keep what we have.
+      setStatus((prev) => (prev === 'loading' ? (initialUser ? 'authenticated' : 'unauthenticated') : prev));
     }
-  }, []);
+  }, [initialUser]);
 
   React.useEffect(() => {
-    if (!initialUser) void refresh();
-  }, [initialUser, refresh]);
+    void refresh();
+    // Once per page load — the mobile app's bootstrap `me()`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const signOut = React.useCallback(async () => {
     try {
-      await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' });
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: { [WEB_REQUEST_HEADER]: '1' },
+        credentials: 'same-origin',
+      });
     } catch {
       // best-effort
     }

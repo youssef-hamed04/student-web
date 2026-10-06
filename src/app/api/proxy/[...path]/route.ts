@@ -18,6 +18,9 @@ import {
   setSessionCookies,
 } from '@/lib/session-cookies';
 import { backendRequest, getAccessToken, getDeviceId, getRefreshToken } from '@/lib/session';
+import { hasWebRequestHeader } from '@/lib/web-request';
+import { contentLocale } from '@/lib/locale';
+import { setProfileCookie, type ProfileSnapshot } from '@/lib/session-cookies';
 
 export async function GET(
   request: NextRequest,
@@ -80,14 +83,15 @@ async function handleProxy(
   }
 
   if (method !== 'GET') {
-    const csrfHeader = request.headers.get('x-web-request');
-    if (csrfHeader !== '1') {
+    if (!hasWebRequestHeader(request.headers)) {
       return jsonError(403, 'CSRF_PROTECTION', 'CSRF protection');
     }
   }
 
   // Protected content is refused outright without this header, so it goes on
   // every proxied call rather than on a list of paths that would drift.
+  const locale = contentLocale(request.headers.get('accept-language'));
+
   const existingDeviceId = await getDeviceId();
   const deviceId = existingDeviceId ?? newDeviceId();
   const isNewDevice = existingDeviceId === null;
@@ -98,7 +102,7 @@ async function handleProxy(
       // Registration lists, read before the student has an account. No token,
       // no refresh and no cookies are involved, so this path ends here.
       try {
-        const result = await backendRequest({ method, path: `/${pathStr}` });
+        const result = await backendRequest({ method, path: `/${pathStr}`, locale });
         return NextResponse.json({ success: true, data: result.data, meta: result.meta });
       } catch (e) {
         const apiErr = asApiError(e);
@@ -132,10 +136,12 @@ async function handleProxy(
       body,
       accessToken,
       deviceId,
+      locale,
     });
 
     const response = NextResponse.json({ success: true, data: result.data, meta: result.meta });
     if (isNewDevice) setDeviceIdCookie(response, deviceId);
+    syncProfileSnapshot(response, method, pathStr, result.data);
     return response;
   } catch (e) {
     const apiErr = asApiError(e);
@@ -204,6 +210,7 @@ async function handleProxy(
         body,
         accessToken: outcome.accessToken,
         deviceId,
+        locale,
       });
 
       const response = NextResponse.json({
@@ -217,6 +224,7 @@ async function handleProxy(
         refreshToken: outcome.refreshToken,
       });
       if (isNewDevice) setDeviceIdCookie(response, deviceId);
+      syncProfileSnapshot(response, method, pathStr, retryResult.data);
 
       return response;
     } catch (retryErr) {
@@ -243,6 +251,28 @@ async function handleProxy(
       return response;
     }
   }
+}
+
+function isProfileSnapshot(value: unknown): value is ProfileSnapshot {
+  if (value === null || typeof value !== 'object') return false;
+  const v = value as Record<string, unknown>;
+  return (
+    typeof v.id === 'string' &&
+    typeof v.fullName === 'string' &&
+    typeof v.phone === 'string' &&
+    typeof v.role === 'string' &&
+    typeof v.status === 'string'
+  );
+}
+
+/**
+ * Keeps the header's user snapshot current. A successful read of `/auth/me`
+ * is the authoritative user, so it replaces the cookie written at sign-in —
+ * the web equivalent of the mobile app's `refreshUser()`.
+ */
+function syncProfileSnapshot(response: NextResponse, method: string, pathStr: string, data: unknown): void {
+  if (method !== 'GET' || pathStr.replace(/^\/+|\/+$/g, '') !== 'auth/me') return;
+  if (isProfileSnapshot(data)) setProfileCookie(response, data);
 }
 
 /**

@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 
+import { burnWatermark } from '@/components/protection/Watermark';
 import { useTranslation } from '@/lib/session-context';
 
 /**
@@ -72,6 +73,7 @@ export function ProtectedPdf({ url, watermark }: { url: string; watermark: strin
           const context = canvas.getContext('2d');
           if (!context) continue;
           await page.render({ canvasContext: context, viewport }).promise;
+          burnWatermark(context, canvas.width, canvas.height, watermark, dpr);
         }
 
         if (!cancelled) setState('ready');
@@ -83,10 +85,10 @@ export function ProtectedPdf({ url, watermark }: { url: string; watermark: strin
     return () => {
       cancelled = true;
     };
-  }, [url]);
+  }, [url, watermark]);
 
   return (
-    <div className="relative">
+    <div className="relative" data-protected>
       <div
         ref={hostRef}
         aria-label={t('library.read')}

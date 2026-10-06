@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import * as React from 'react';
 
 import { Avatar, Badge, Button, Card, CardTitle, KeyValue, Skeleton, Stat } from '@/components/ui/core';
-import { AppShell, ErrorState, PageHeader } from '@/components/ui/feedback';
+import { AppShell, ErrorState, PageHeader, toUserMessage } from '@/components/ui/feedback';
 import {
   AwardIcon,
   BookIcon,
@@ -15,8 +15,9 @@ import {
   LogOutIcon,
   PencilIcon,
 } from '@/components/ui/icons';
+import { SupportLinks } from '@/components/support/SupportLinks';
 import { useHomeFeed, useProfile, useUnreadCount } from '@/features/api';
-import { api } from '@/lib/api-client';
+import { removeAvatar as removeAvatarRequest, uploadAvatar, validateAvatar } from '@/features/avatar';
 import { formatCompact, formatDate, formatDuration, localizedName, maskPhone } from '@/lib/format';
 import { useSession, useTranslation } from '@/lib/session-context';
 import { toast } from '@/store/stores';
@@ -38,23 +39,18 @@ export default function ProfilePage() {
   }, [status, router]);
 
   const changeAvatar = async (file: File) => {
+    const problem = validateAvatar(file);
+    if (problem) {
+      toast.error(t(`profile.avatar_${problem}`));
+      return;
+    }
     setAvatarBusy(true);
     setAvatarError(null);
     try {
-      const presign = await api.post<{ uploadUrl: string; objectKey: string }>('storage/uploads/avatar', {
-        contentType: file.type,
-        filename: file.name,
-      });
-      const put = await fetch(presign.uploadUrl, {
-        method: 'PUT',
-        headers: { 'content-type': file.type },
-        body: file,
-      });
-      if (!put.ok) throw new Error('Upload failed');
-      await api.put('profile/avatar', { avatarUrl: presign.objectKey });
+      await uploadAvatar(file);
       await refresh();
       await profileQuery.refetch();
-      toast.success(t('profile.profileUpdated'));
+      toast.success(t('profile.avatarUpdated'));
     } catch (e) {
       setAvatarError(e);
     } finally {
@@ -66,10 +62,10 @@ export default function ProfilePage() {
     setAvatarBusy(true);
     setAvatarError(null);
     try {
-      await api.put('profile/avatar', { avatarUrl: null });
+      await removeAvatarRequest();
       await refresh();
       await profileQuery.refetch();
-      toast.success(t('profile.profileUpdated'));
+      toast.success(t('profile.avatarRemoved'));
     } catch (e) {
       setAvatarError(e);
     } finally {
@@ -150,6 +146,7 @@ export default function ProfilePage() {
             <div className="-mx-1">
               {[
                 { href: '/profile/edit', label: t('profile.editProfile') },
+                { href: '/settings/devices', label: t('settings.authorizedDevice') },
                 { href: '/settings/security', label: t('settings.security') },
                 { href: '/settings', label: t('settings.title') },
               ].map((row) => (
@@ -162,6 +159,23 @@ export default function ProfilePage() {
                   <ChevronRightIcon size={15} className="text-subtle" />
                 </Link>
               ))}
+            </div>
+          </Card>
+
+          {/*
+            Passwords are changed by the administration, not in-app — the
+            mobile profile's "Change password" opens WhatsApp with the
+            student's name and phone filled in. Same here.
+          */}
+          <Card>
+            <CardTitle>{t('profile.changePassword')}</CardTitle>
+            <SupportLinks
+              channels={['whatsapp', 'email']}
+              context={{ reason: 'password', fullName, phone: profile.phone }}
+            />
+            <div className="mt-4 border-t border-border pt-4">
+              <p className="mb-2 text-[13px] font-semibold">{t('settings.contactSupport')}</p>
+              <SupportLinks context={{ reason: 'general', fullName, phone: profile.phone }} />
             </div>
           </Card>
 
@@ -196,7 +210,7 @@ export default function ProfilePage() {
 
             {avatarError ? (
               <div className="mt-4 rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-[13px] text-danger">
-                {avatarError instanceof Error ? avatarError.message : t('errors.genericBody')}
+                {toUserMessage(avatarError, t)}
               </div>
             ) : null}
 

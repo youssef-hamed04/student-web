@@ -2,6 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import * as React from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
@@ -11,7 +12,8 @@ import { Input } from '@/components/ui/forms';
 import { InfoIcon } from '@/components/ui/icons';
 import { useUpdateProfile } from '@/features/api';
 import { updateProfileSchema } from '@/features/schemas';
-import { api } from '@/lib/api-client';
+import { removeAvatar as removeAvatarRequest, uploadAvatar, validateAvatar } from '@/features/avatar';
+import { qk } from '@/lib/query-keys';
 import { useSession, useTranslation } from '@/lib/session-context';
 import { toast } from '@/store/stores';
 
@@ -20,6 +22,7 @@ export default function EditProfilePage() {
   const router = useRouter();
   const { user, status, refresh } = useSession();
   const mutation = useUpdateProfile();
+  const queryClient = useQueryClient();
   const [formError, setFormError] = React.useState<unknown>(null);
   const [avatarBusy, setAvatarBusy] = React.useState(false);
   const fileRef = React.useRef<HTMLInputElement>(null);
@@ -46,21 +49,17 @@ export default function EditProfilePage() {
   });
 
   const changeAvatar = async (file: File) => {
+    const problem = validateAvatar(file);
+    if (problem) {
+      toast.error(t(`profile.avatar_${problem}`));
+      return;
+    }
     setAvatarBusy(true);
+    setFormError(null);
     try {
-      const presign = await api.post<{ uploadUrl: string; objectKey: string }>('storage/uploads/avatar', {
-        contentType: file.type,
-        filename: file.name,
-      });
-      const put = await fetch(presign.uploadUrl, {
-        method: 'PUT',
-        headers: { 'content-type': file.type },
-        body: file,
-      });
-      if (!put.ok) throw new Error('Upload failed');
-      await api.put('profile/avatar', { avatarUrl: presign.objectKey });
-      await refresh();
-      toast.success(t('profile.profileUpdated'));
+      await uploadAvatar(file);
+      await Promise.all([refresh(), queryClient.invalidateQueries({ queryKey: qk.auth.all })]);
+      toast.success(t('profile.avatarUpdated'));
     } catch (e) {
       setFormError(e);
     } finally {
@@ -70,10 +69,11 @@ export default function EditProfilePage() {
 
   const removeAvatar = async () => {
     setAvatarBusy(true);
+    setFormError(null);
     try {
-      await api.put('profile/avatar', { avatarUrl: null });
-      await refresh();
-      toast.success(t('profile.profileUpdated'));
+      await removeAvatarRequest();
+      await Promise.all([refresh(), queryClient.invalidateQueries({ queryKey: qk.auth.all })]);
+      toast.success(t('profile.avatarRemoved'));
     } catch (e) {
       setFormError(e);
     } finally {

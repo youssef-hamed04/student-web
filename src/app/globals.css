@@ -142,3 +142,15 @@ video::-webkit-media-text-track-display {
     scrollbar-color: var(--color-border-strong) transparent;
   }
 }
+
+/*
+ * Protected content (video frames, rendered documents, attachments) is left
+ * out of print. This is a deterrent for the obvious "Print → Save as PDF"
+ * route, not a guarantee: no web page can stop a screenshot. The watermark is
+ * what makes a capture traceable.
+ */
+@media print {
+  [data-protected] {
+    visibility: hidden !important;
+  }
+}

@@ -2,12 +2,15 @@
 
 import Hls from 'hls.js';
 import { useParams, useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import * as React from 'react';
 
+import { Watermark } from '@/components/protection/Watermark';
 import { ErrorState, FocusShell } from '@/components/ui/feedback';
 import { useLessonByVideo } from '@/features/api';
 import { api, ApiError } from '@/lib/api-client';
 import { formatTimecode } from '@/lib/format';
+import { qk } from '@/lib/query-keys';
 import { useTranslation } from '@/lib/session-context';
 import { usePlayerStore } from '@/store/stores';
 import type { PlaybackTicket } from '@/types/domain';
@@ -89,6 +92,33 @@ function ProtectedPlayer({
   const [loading, setLoading] = React.useState(true);
   const [allowance, setAllowance] = React.useState<{ used: number; limit: number; remaining: number } | null>(null);
   const ticketRef = React.useRef<PlaybackTicket | null>(null);
+  const frameRef = React.useRef<HTMLDivElement>(null);
+  const [isFullscreen, setIsFullscreen] = React.useState(false);
+  const queryClient = useQueryClient();
+
+  React.useEffect(() => {
+    const onChange = () => setIsFullscreen(document.fullscreenElement === frameRef.current && frameRef.current !== null);
+    document.addEventListener('fullscreenchange', onChange);
+    return () => document.removeEventListener('fullscreenchange', onChange);
+  }, []);
+
+  const toggleFullscreen = React.useCallback(() => {
+    const frame = frameRef.current;
+    if (!frame) return;
+    if (document.fullscreenElement) void document.exitFullscreen().catch(() => undefined);
+    else void frame.requestFullscreen().catch(() => undefined);
+  }, []);
+
+  // Leaving the player shows fresh progress on the lesson and course pages,
+  // as the mobile player does after it flushes.
+  React.useEffect(
+    () => () => {
+      void queryClient.invalidateQueries({ queryKey: qk.lessons.detail(lessonId) });
+      void queryClient.invalidateQueries({ queryKey: qk.courses.detail(courseId) });
+      void queryClient.invalidateQueries({ queryKey: qk.home.all });
+    },
+    [queryClient, lessonId, courseId]
+  );
   const lastWallTimeRef = React.useRef<number | null>(null);
   const watchedAccumulatorRef = React.useRef(0);
 
@@ -270,7 +300,12 @@ function ProtectedPlayer({
         {allowance && allowance.remaining <= 1 ? (
           <p className="pb-3 text-center text-xs font-bold text-warning">{t('player.lastPlayWarning')}</p>
         ) : null}
-        <div className="relative mx-auto w-full max-w-5xl">
+        <div
+          ref={frameRef}
+          data-protected
+          onDoubleClick={toggleFullscreen}
+          className="relative mx-auto w-full max-w-5xl [&:fullscreen]:flex [&:fullscreen]:max-w-none [&:fullscreen]:items-center [&:fullscreen]:bg-black"
+        >
           <video
             ref={videoRef}
             controls
@@ -279,7 +314,11 @@ function ProtectedPlayer({
             // picture" on a paid lesson. Neither is ours to give away: the
             // first hands over the stream, the second floats it outside the
             // page where the watermark no longer covers it.
-            controlsList="nodownload noplaybackrate noremoteplayback"
+            // Native fullscreen would take the <video> element alone to full
+            // screen and leave the watermark behind on the page. Fullscreen is
+            // offered on the frame instead (button / double-click), so the
+            // watermark is always over the picture, as it is on the phone.
+            controlsList="nodownload noplaybackrate noremoteplayback nofullscreen"
             disablePictureInPicture
             disableRemotePlayback
             onContextMenu={(e) => e.preventDefault()}
@@ -307,7 +346,20 @@ function ProtectedPlayer({
               ? ticket.captions.map((c) => <track key={c.language} kind="subtitles" srcLang={c.language} label={c.label} src={c.url} default={c.isDefault} />)
               : null}
           </video>
-          <WatermarkOverlay text={`${ticket.watermark.primary} · ${ticket.watermark.secondary}`} opacity={ticket.watermark.opacity} />
+          <Watermark
+            primary={ticket.watermark.primary}
+            secondary={ticket.watermark.secondary}
+            opacity={ticket.watermark.opacity}
+            intervalMs={Math.max(5, ticket.watermark.moveIntervalSeconds || 12) * 1000}
+          />
+          <button
+            type="button"
+            onClick={toggleFullscreen}
+            aria-label={isFullscreen ? t('player.exitFullscreen') : t('player.fullscreen')}
+            className="absolute end-3 top-3 z-20 cursor-pointer rounded-md bg-black/50 px-2 py-1 text-[11px] font-semibold text-white hover:bg-black/70"
+          >
+            {isFullscreen ? t('player.exitFullscreen') : t('player.fullscreen')}
+          </button>
         </div>
         <div className="mx-auto flex max-w-5xl items-center justify-center gap-4 px-4 pt-3 text-xs text-white/70">
           <button
@@ -327,19 +379,5 @@ function ProtectedPlayer({
         <p className="px-4 pt-2 text-center text-[11px] text-white/60">{t('player.protectedNotice')}</p>
       </div>
     </FocusShell>
-  );
-}
-
-function WatermarkOverlay({ text, opacity }: { text: string; opacity: number }) {
-  const [pos, setPos] = React.useState(0);
-  React.useEffect(() => {
-    const id = setInterval(() => setPos((p) => (p + 1) % 4), 15000);
-    return () => clearInterval(id);
-  }, []);
-  const spots = ['top-4 left-4', 'top-4 right-4', 'bottom-16 left-4', 'bottom-16 right-4'];
-  return (
-    <div className={`pointer-events-none absolute ${spots[pos]} select-none rounded bg-black/40 px-2 py-1 text-[11px] font-semibold text-white`} style={{ opacity: Math.max(0.35, opacity) }}>
-      {text}
-    </div>
   );
 }

@@ -3,12 +3,13 @@
 import * as React from 'react';
 
 import { Badge, Button, Card, Skeleton } from '@/components/ui/core';
-import { AppShell, ErrorState, PageHeader } from '@/components/ui/feedback';
+import { SupportLinks } from '@/components/support/SupportLinks';
+import { AppShell, ErrorState, PageHeader, toUserMessage } from '@/components/ui/feedback';
 import { DeviceIcon, PlusIcon, ShieldIcon } from '@/components/ui/icons';
 import { Column, DataTable } from '@/components/ui/table';
 import { useAuthorizedDevices, useRequestDeviceChange } from '@/features/api';
 import { formatDateTime, formatRelative } from '@/lib/format';
-import { useTranslation } from '@/lib/session-context';
+import { useSession, useTranslation } from '@/lib/session-context';
 import { toast } from '@/store/stores';
 import type { AuthorizedDevice } from '@/types/domain';
 
@@ -16,14 +17,15 @@ export default function DevicesPage() {
   const { t, language } = useTranslation();
   const devices = useAuthorizedDevices();
   const requestChange = useRequestDeviceChange();
+  const { user } = useSession();
 
   const send = React.useCallback(
     async (reason: string) => {
       try {
         await requestChange.mutateAsync(`${reason} (${navigator.userAgent.slice(0, 80)})`);
         toast.success(t('settings.requestSent'));
-      } catch {
-        toast.error(t('errors.genericBody'));
+      } catch (e) {
+        toast.error(toUserMessage(e, t));
       }
     },
     [requestChange, t]
@@ -165,6 +167,12 @@ export default function DevicesPage() {
         <Button variant="secondary" loading={requestChange.isPending} onClick={submit}>
           {t('settings.requestDeviceChange')}
         </Button>
+        {/* The mobile screen follows a change request with WhatsApp to the admin. */}
+        <SupportLinks
+          className="mt-3"
+          channels={['whatsapp']}
+          context={{ reason: 'device', fullName: user?.fullName, phone: user?.phone }}
+        />
       </Card>
     </AppShell>
   );

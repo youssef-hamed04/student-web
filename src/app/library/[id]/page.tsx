@@ -259,9 +259,23 @@ export default function LibraryMaterialPage() {
                 </KeyValue>
               ) : null}
             </div>
-            {quote.data.sufficientCredit && quote.data.purchasable && !quote.data.fullyOwned ? (
+            {quote.data.fullyOwned ? (
+              <p className="text-[13px] text-warning">{t('library.alreadyOwnedBody')}</p>
+            ) : quote.data.partsAlreadyOwned > 0 ? (
+              <p className="text-[13px] text-warning">
+                {t('library.packageOverlap', { owned: quote.data.partsAlreadyOwned, total: quote.data.partCount })}
+              </p>
+            ) : null}
+            {/*
+              Same three outcomes as the mobile sheet. Not purchasable (or
+              already owned) is said plainly — it used to offer "Top up", which
+              sent a student who already owned the item to buy credit.
+            */}
+            {!quote.data.purchasable || quote.data.fullyOwned ? (
+              <p className="text-[13px] text-muted">{t('library.notPurchasable')}</p>
+            ) : quote.data.sufficientCredit ? (
               <Button fullWidth loading={purchase.isPending} onClick={confirm}>
-                {t('library.buy')}
+                {t('library.confirmBuy', { price: formatMoney({ amount: quote.data.price, currency: quote.data.currency }, language) })}
               </Button>
             ) : (
               <Button fullWidth variant="secondary" onClick={() => { closeSheet(); router.push('/wallet'); }}>

@@ -138,6 +138,7 @@ export default function HomePage() {
   const recommended = data?.recommended ?? [];
   const newCourses = data?.newCourses ?? [];
   const announcements = data?.announcements ?? [];
+  const banners = announcements.filter((n) => Boolean(n.imageUrl));
 
   const hasNothing =
     !data ||
@@ -157,6 +158,30 @@ export default function HomePage() {
           ) : null
         }
       />
+
+      {/*
+        The mobile home opens with a banner strip: every announcement that
+        carries an image, opening its route on tap (features/ads). Same source,
+        same order, same destinations.
+      */}
+      {banners.length > 0 ? (
+        <div className="mb-6 flex snap-x gap-4 overflow-x-auto pb-2">
+          {banners.map((n) => (
+            <button
+              key={n.id}
+              type="button"
+              onClick={() => (n.route ? router.push(toWebRoute(n.route, '/notifications')) : undefined)}
+              className="relative aspect-[21/9] w-[min(560px,85vw)] shrink-0 cursor-pointer snap-start overflow-hidden rounded-xl border border-border bg-surface-alt text-start"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={n.imageUrl ?? ''} alt="" className="h-full w-full object-cover" loading="lazy" />
+              <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-4 pb-3 pt-8 text-sm font-semibold text-white">
+                {n.title}
+              </span>
+            </button>
+          ))}
+        </div>
+      ) : null}
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0 space-y-8">

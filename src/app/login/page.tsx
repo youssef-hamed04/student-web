@@ -14,6 +14,8 @@ import { CheckIcon } from '@/components/ui/icons';
 import { loginSchema, type LoginInput } from '@/features/schemas';
 import { ApiError, asApiError } from '@/lib/api-client';
 import { useSession, useTranslation } from '@/lib/session-context';
+import { WEB_REQUEST_HEADER } from '@/lib/web-request';
+import { safeNextPath } from '@/lib/route-guard';
 import { useLanguageStore } from '@/store/stores';
 
 const TAGLINE_KEY = 'search.idle.body';
@@ -33,9 +35,23 @@ export default function LoginPage() {
     mode: 'onBlur',
   });
 
+  // Where to go after signing in, and why the previous session ended — the
+  // mobile login screen shows that reason too (`lastSessionError`). Read from
+  // `location` rather than `useSearchParams` so the page stays statically
+  // renderable.
+  const [nextPath, setNextPath] = React.useState<string>('/home');
   React.useEffect(() => {
-    if (status === 'authenticated') router.replace('/home');
-  }, [status, router]);
+    const params = new URLSearchParams(window.location.search);
+    setNextPath(safeNextPath(params.get('next')) ?? '/home');
+    const reason = params.get('reason');
+    if (reason && /^[A-Z_]{3,40}$/.test(reason)) {
+      setFormError(new ApiError({ code: reason as ApiError['code'], status: 401, message: '' }));
+    }
+  }, []);
+
+  React.useEffect(() => {
+    if (status === 'authenticated') router.replace(nextPath);
+  }, [status, router, nextPath]);
 
   const onSubmit = handleSubmit(async (values) => {
     setFormError(null);
@@ -43,7 +59,7 @@ export default function LoginPage() {
       const parsed = loginSchema.parse(values);
       const res = await fetch('/api/auth/login', {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: { 'content-type': 'application/json', [WEB_REQUEST_HEADER]: '1' },
         credentials: 'same-origin',
         body: JSON.stringify(parsed),
       });
@@ -57,7 +73,7 @@ export default function LoginPage() {
         });
       }
       await refresh();
-      router.replace('/home');
+      router.replace(nextPath);
     } catch (e) {
       setFormError(asApiError(e));
     }

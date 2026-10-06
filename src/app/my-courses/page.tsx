@@ -96,7 +96,7 @@ export default function MyCoursesPage() {
         header: t('web.col.status'),
         render: (c) => {
           const meta = accessBadgeMeta(c.access.state, t);
-          return <Badge label={meta.label} tone={meta.tone} />;
+          return meta ? <Badge label={meta.label} tone={meta.tone} /> : null;
         },
       },
       {
@@ -180,7 +180,7 @@ export default function MyCoursesPage() {
                   <span className="text-[13px] font-semibold tabular-nums">
                     {formatPercent(c.progress?.percent ?? 0, language)}
                   </span>
-                  <Badge label={meta.label} tone={meta.tone} />
+                  {meta ? <Badge label={meta.label} tone={meta.tone} /> : null}
                 </div>
               </div>
             );

@@ -6,20 +6,19 @@ import { Badge, ProgressBar } from '@/components/ui/core';
 import { GridIcon } from '@/components/ui/icons';
 import { formatDuration, formatMoney, localizedName } from '@/lib/format';
 import { useTranslation } from '@/lib/session-context';
+import { ACCESS_BADGE } from '@/lib/course-access';
 import { cn } from '@/lib/utils';
 import type { AccessState, CourseSummary } from '@/types/domain';
 
 type TFn = (key: string, params?: Record<string, string | number>) => string;
 
-export function accessBadgeMeta(
-  state: AccessState,
-  t: TFn
-): { label: string; tone: 'success' | 'warning' | 'neutral' } {
-  if (state === 'ACTIVE') return { label: t('access.joinedTitle'), tone: 'success' };
-  if (state === 'PENDING_APPROVAL' || state === 'PENDING_PAYMENT') {
-    return { label: t('access.pendingTitle'), tone: 'warning' };
-  }
-  return { label: state, tone: 'neutral' };
+/**
+ * The access badge, with the mobile card's labels. Every state has a
+ * translated label — EXPIRED, REVOKED and ARCHIVED used to print the raw enum.
+ */
+export function accessBadgeMeta(state: AccessState, t: TFn): { label: string; tone: 'success' | 'warning' | 'danger' | 'neutral' } | null {
+  const meta = ACCESS_BADGE[state];
+  return meta ? { label: t(meta.key), tone: meta.tone } : null;
 }
 
 export function CourseCard({ course, layout = 'grid' }: { course: CourseSummary; layout?: 'grid' | 'rail' }) {
@@ -63,7 +62,7 @@ export function CourseCard({ course, layout = 'grid' }: { course: CourseSummary;
               <span className="truncate text-sm font-bold text-primary-ink">{formatMoney(course.price, language)}</span>
             ) : null}
           </span>
-          {course.access.state !== 'NOT_ENROLLED' ? <Badge label={access.label} tone={access.tone} /> : null}
+          {access ? <Badge label={access.label} tone={access.tone} /> : null}
         </div>
         {course.progress && course.access.state === 'ACTIVE' ? (
           <ProgressBar percent={course.progress.percent} className="mt-3" />

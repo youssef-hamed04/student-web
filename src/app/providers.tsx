@@ -1,25 +1,58 @@
 'use client';
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MutationCache, QueryCache, QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import * as React from 'react';
 
 import { SessionProvider } from '@/lib/session-context';
+import { endSessionIfNeeded } from '@/lib/session-end';
 import { useLanguageStore, useThemeStore, useUiStore } from '@/store/stores';
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 30_000,
-      retry: (count, err) => {
-        const status = (err as { status?: number })?.status ?? 0;
-        if (status >= 400 && status < 500) return false;
-        return count < 1;
+/**
+ * One client per browser session, created in state rather than at module
+ * scope: a module-level client is shared by every request the server renders,
+ * which is the documented way to leak one user's cached data into another's
+ * page.
+ *
+ * Every failed query and mutation passes through `endSessionIfNeeded`, the
+ * web counterpart of the mobile client's `onSessionEnded`.
+ */
+function createQueryClient(): QueryClient {
+  return new QueryClient({
+    queryCache: new QueryCache({ onError: endSessionIfNeeded }),
+    mutationCache: new MutationCache({ onError: endSessionIfNeeded }),
+    defaultOptions: {
+      queries: {
+        staleTime: 30_000,
+        retry: (count, err) => {
+          const status = (err as { status?: number })?.status ?? 0;
+          if (status >= 400 && status < 500) return false;
+          return count < 1;
+        },
+        refetchOnWindowFocus: true,
       },
-      refetchOnWindowFocus: true,
+      mutations: { retry: false },
     },
-    mutations: { retry: false },
-  },
-});
+  });
+}
+
+/**
+ * Content comes back localised in the language it was requested in, so a
+ * language change refetches what is on screen rather than leaving the previous
+ * language's titles and announcements in the cache.
+ */
+function LanguageSync() {
+  const language = useLanguageStore((s) => s.language);
+  const queryClient = useQueryClient();
+  const first = React.useRef(true);
+  React.useEffect(() => {
+    if (first.current) {
+      first.current = false;
+      return;
+    }
+    void queryClient.invalidateQueries();
+  }, [language, queryClient]);
+  return null;
+}
 
 function ThemeAndDir({ children }: { children: React.ReactNode }) {
   const preference = useThemeStore((s) => s.preference);
@@ -82,8 +115,10 @@ export function Providers({
   initialUser: { id: string; fullName: string; phone: string; role: string; status: string; avatarUrl?: string | null } | null;
   children: React.ReactNode;
 }) {
+  const [queryClient] = React.useState(createQueryClient);
   return (
     <QueryClientProvider client={queryClient}>
+      <LanguageSync />
       <SessionProvider initialUser={initialUser}>
         <ThemeAndDir>{children}</ThemeAndDir>
         <ToastHost />

@@ -1,6 +1,8 @@
 'use client';
 
 import type { ApiErrorCode } from '@/types/api';
+import { WEB_REQUEST_HEADER } from '@/lib/web-request';
+import { useLanguageStore } from '@/store/stores';
 
 export class ApiError extends Error {
   code: ApiErrorCode;
@@ -23,15 +25,6 @@ export class ApiError extends Error {
     this.requestId = params.requestId;
   }
 }
-
-export const SESSION_ENDING = new Set<ApiErrorCode>([
-  'SESSION_EXPIRED',
-  'ACCOUNT_DISABLED',
-  'DEVICE_NOT_AUTHORIZED',
-  'DEVICE_LIMIT_REACHED',
-  'DEVICE_CHANGE_PENDING',
-  'DEVICE_INTEGRITY_FAILED',
-]);
 
 interface BackendErrorBody {
   success?: boolean;
@@ -89,7 +82,9 @@ async function request<T>(method: Method, path: string, options: RequestOptions 
 
   const headers: Record<string, string> = { accept: 'application/json' };
   if (options.body !== undefined) headers['content-type'] = 'application/json';
-  if (method !== 'GET') headers['x-web-request'] = '1';
+  if (method !== 'GET') headers[WEB_REQUEST_HEADER] = '1';
+  // The app's language, not the browser's: the backend localises content from it.
+  headers['accept-language'] = useLanguageStore.getState().language;
   Object.assign(headers, options.headers ?? {});
 
   let res: Response;

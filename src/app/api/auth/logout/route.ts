@@ -1,8 +1,9 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
 
 import { backendRequest, getAccessToken } from '@/lib/session';
 import { bumpSessionGeneration, resetRefreshState } from '@/lib/refresh-lock';
 import { clearSessionCookies } from '@/lib/session-cookies';
+import { hasWebRequestHeader } from '@/lib/web-request';
 
 /**
  * Signs the browser out.
@@ -18,7 +19,19 @@ import { clearSessionCookies } from '@/lib/session-cookies';
  * longer use. `resetRefreshState()` then clears the cooldown so the next
  * sign-in is not penalised by the previous session's failure.
  */
-export async function POST() {
+export async function POST(request: NextRequest) {
+  if (!hasWebRequestHeader(request.headers)) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: { code: 'CSRF_PROTECTION', message: 'CSRF protection' },
+        code: 'CSRF_PROTECTION',
+        message: 'CSRF protection',
+      },
+      { status: 403 }
+    );
+  }
+
   bumpSessionGeneration();
 
   const accessToken = await getAccessToken();

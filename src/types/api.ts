@@ -47,6 +47,7 @@ export type ApiErrorCode =
   | 'FORBIDDEN'
   | 'NOT_FOUND'
   | 'COURSE_NOT_AVAILABLE'
+  | 'COURSE_NOT_TARGETED'
   | 'COURSE_ARCHIVED'
   | 'ACCESS_EXPIRED'
   | 'NOT_ENROLLED'

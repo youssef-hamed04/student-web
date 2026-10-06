@@ -28,7 +28,9 @@ import {
   UserIcon,
   WalletIcon,
 } from '@/components/ui/icons';
+import { dictionaries } from '@/i18n/dictionaries';
 import { ApiError } from '@/lib/api-client';
+import { errorMessageKey } from '@/lib/error-messages';
 import { useSession, useTranslation } from '@/lib/session-context';
 import { useLanguageStore, useThemeStore, type ThemePreference } from '@/store/stores';
 import { cn } from '@/lib/utils';
@@ -44,14 +46,14 @@ export function InlineError({ error }: { error: unknown }) {
   );
 }
 
+const hasDictKey = (key: string): boolean => key in dictionaries.en;
+
+/**
+ * A translated sentence for any failure. Never the backend's raw `message`:
+ * that is English developer text, and mobile never shows it either.
+ */
 export function toUserMessage(error: unknown, t: (k: string) => string): string {
-  if (error instanceof ApiError) {
-    const key = `errors.${error.code}`;
-    const mapped = t(key);
-    if (mapped !== key) return mapped;
-    return error.message || t('errors.genericBody');
-  }
-  if (error instanceof Error) return error.message;
+  if (error instanceof ApiError) return t(errorMessageKey(error.code, error.status, hasDictKey));
   return t('errors.genericBody');
 }
 

@@ -28,11 +28,14 @@ export async function backendRequest<T>(params: {
   deviceId?: string;
   /** Describes the browser on the call that binds it — the sign-in. */
   device?: { name?: string; model?: string; osVersion?: string };
+  /** The app's language, so localised content comes back in it (as on mobile). */
+  locale?: 'en' | 'ar' | null;
   signal?: AbortSignal;
 }): Promise<BackendResponse<T>> {
-  const { method, path, body, accessToken, deviceId, device, signal } = params;
+  const { method, path, body, accessToken, deviceId, device, locale, signal } = params;
 
   const headers: Record<string, string> = { accept: 'application/json' };
+  if (locale) headers['accept-language'] = locale;
   if (body !== undefined) headers['content-type'] = 'application/json';
   if (accessToken) headers['authorization'] = `Bearer ${accessToken}`;
   headers['x-client'] = 'web';

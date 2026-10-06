@@ -4,11 +4,9 @@ import Link from 'next/link';
 
 import { BrandLogo } from '@/components/brand/BrandLogo';
 import { Card } from '@/components/ui/core';
-import { ArrowRightIcon, InfoIcon, LifeBuoyIcon } from '@/components/ui/icons';
+import { hasSupportChannel, SupportLinks } from '@/components/support/SupportLinks';
+import { ArrowRightIcon, InfoIcon } from '@/components/ui/icons';
 import { useTranslation } from '@/lib/session-context';
-
-const primaryLink =
-  'inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary px-5 text-[15px] font-semibold text-primary-fg transition-colors hover:brightness-110';
 
 export default function PasswordHelpPage() {
   const { t } = useTranslation();
@@ -31,10 +29,16 @@ export default function PasswordHelpPage() {
         </div>
 
         <div className="mt-6 flex flex-col gap-2.5">
-          <Link href="/support/new" className={primaryLink}>
-            <LifeBuoyIcon size={18} />
-            {t('settings.contactSupport')}
-          </Link>
+          {/*
+            A student who forgot their password cannot sign in, so the in-app
+            ticket form (which needs a session) was a dead end here. The mobile
+            screen offers WhatsApp, a call and e-mail; so does this one.
+          */}
+          {hasSupportChannel() ? (
+            <SupportLinks context={{ reason: 'password' }} className="[&>a]:flex-1" />
+          ) : (
+            <p className="text-[13px] text-muted">{t('auth.passwordHelpNote')}</p>
+          )}
           <Link
             href="/login"
             className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-border-strong bg-surface px-4 text-sm font-semibold transition-colors hover:bg-surface-alt"

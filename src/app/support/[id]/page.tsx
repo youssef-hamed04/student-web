@@ -53,8 +53,7 @@ export default function TicketPage() {
 
   const ticket = query.data;
   const closed = ticket.status === 'CLOSED';
-  const statusLabel =
-    ticket.status === 'OPEN' || ticket.status === 'PENDING' ? t('progress.inProgress') : t('progress.completed');
+  const statusLabel = t(`support.status.${ticket.status}`);
 
   return (
     <AppShell>
@@ -65,7 +64,7 @@ export default function TicketPage() {
         meta={
           <>
             <Badge label={statusLabel} tone={STATUS_TONE[ticket.status]} />
-            <Badge label={ticket.category} tone="neutral" />
+            <Badge label={t(`support.categories.${ticket.category}`)} tone="neutral" />
           </>
         }
       />
@@ -135,7 +134,7 @@ export default function TicketPage() {
           <Card>
             <CardTitle>{t('support.ticketsTitle')}</CardTitle>
             <KeyValue label={t('support.subject')}>{ticket.subject}</KeyValue>
-            <KeyValue label={t('support.category')}>{ticket.category}</KeyValue>
+            <KeyValue label={t('support.category')}>{t(`support.categories.${ticket.category}`)}</KeyValue>
             <KeyValue label={t('web.col.status')}>
               <Badge label={statusLabel} tone={STATUS_TONE[ticket.status]} />
             </KeyValue>
